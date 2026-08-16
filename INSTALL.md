@@ -76,7 +76,7 @@ any other project):
 2. Paste this prompt, substituting your seed repo's `owner/name`:
 
    > Install the spec-kit seed into this repository. The seed is the GitHub repo
-   > **`<owner>/spec-kit-seed>`**, with its files at the repo root. Add that seed repo to the
+   > **`<owner>/spec-kit-seed`**, with its files at the repo root. Add that seed repo to the
    > session so you can read it, copy `.claude/` and `.specify/` in verbatim, merge the
    > `CLAUDE.snippet.md` sections into `CLAUDE.md` and fill the `<FILL IN>` placeholders from
    > this repo's real tooling, run `bash .specify/scripts/bash/preflight.sh` to verify, then
