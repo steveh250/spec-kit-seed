@@ -65,3 +65,12 @@ example prompts for each phase:** [`USAGE.md`](USAGE.md).
 - **Day-to-day workflow (constitution → feature), phase by phase:** [`USAGE.md`](USAGE.md)
 - **Full install, alternatives, and upgrades:** [`INSTALL.md`](INSTALL.md)
 - **Provenance, upstream pin, and deviations:** [`.specify/README.md`](.specify/README.md)
+
+## License & credits
+
+Licensed under the [MIT License](LICENSE).
+
+Built on [github/spec-kit](https://github.com/github/spec-kit) (MIT, © GitHub, Inc.), pinned
+to release **v0.15.1** and adapted into Claude Code skills for cloud sessions. The upstream
+copyright is preserved in [`LICENSE`](LICENSE); what was taken verbatim vs. adapted, and why,
+is documented in [`.specify/README.md`](.specify/README.md).
