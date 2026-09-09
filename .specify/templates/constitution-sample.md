@@ -23,16 +23,17 @@ Version change: (sample) → 1.0.0
 Rationale: Initial ratification for [PROJECT_NAME], adopted from the owner's
 cross-project constitution sample with project-specific values filled in.
 
-Principles defined (9):
+Principles defined (10):
   I.    Specification Before Code
   II.   Documentation Is a Build Artifact
   III.  Hard Boundaries Between Tiers
-  IV.   Security and Untrusted Input by Default
-  V.    Tests Accompany Every Behaviour Change
-  VI.   Consistent, Linted, Typed Code
-  VII.  Configuration Over Hardcoding; Degrade Gracefully
-  VIII. Observability and Auditable Provenance
-  IX.   Simplicity and Honest Scope
+  IV.   Stateless Services, External State
+  V.    Security and Untrusted Input by Default
+  VI.   Tests Accompany Every Behaviour Change
+  VII.  Consistent, Linted, Typed Code
+  VIII. Configuration Over Hardcoding; Degrade Gracefully
+  IX.   Observability and Auditable Provenance
+  X.    Simplicity and Honest Scope
 
 Sections:
   Added → "Technology Constraints"
@@ -112,8 +113,19 @@ replaced independently:
   table, claimed with `SELECT … FOR UPDATE SKIP LOCKED`) or another explicitly
   declared contract in `docs/ARCHITECTURE.md`. Neither tier imports the other's
   modules; only a `shared/` configuration module is common.
+- All system functionality MUST be exposed through a versioned API boundary
+  (`/api/v1/…`). The frontend, other deployables, and external consumers reach
+  functionality only through that API, never by importing backend modules or
+  reading the database directly. This is the seam along which the system is
+  scaled and made highly available.
 - The frontend contains **no business logic**. All computation, validation, and
   transformation live in the backend language.
+- Business logic lives in application code, not in the database. The database
+  owns integrity mechanics only: constraints, enum types, indexes, `updated_at`
+  triggers, and the atomic job-claim query. Domain rules, calculations,
+  workflow, and validation MUST NOT be implemented in stored procedures,
+  triggers, or views, so that logic is testable, versioned with the code, and
+  portable across datastores.
 - Each deployable MUST be independently deployable and MUST own its own database
   and migration history. Deployables MUST NOT share a schema.
 - Backends bind to loopback or sit behind an authenticating reverse proxy /
@@ -125,7 +137,32 @@ Rationale: a database-only integration boundary makes "advisory processing
 cannot corrupt authoritative data" a structural guarantee, and lets a local LLM
 agent tier be swapped, restarted, or scaled without touching the web tier.
 
-### IV. Security and Untrusted Input by Default
+### IV. Stateless Services, External State
+
+Any instance of a service can serve any request, and any instance can be
+restarted or replaced without losing work:
+
+- Services behind the API boundary MUST hold no state between requests that
+  another instance, or the same instance after a restart, would need. Sessions,
+  job and step status, queues, uploaded files, generated outputs, and any cache
+  with correctness implications MUST live in an external store: the database,
+  object storage, or a managed cache.
+- Local disk and process memory MAY be used only as scratch space for a single
+  in-flight operation, and the operation MUST be recoverable if that scratch is
+  lost. A file that must outlive the request or be visible to another process
+  is written to external storage first.
+- Long-running workers MUST be restartable: a job interrupted mid-flight is
+  re-claimable by any worker (lease or heartbeat on the claimed row), not lost
+  or duplicated. Step recording is idempotent (`ON CONFLICT … DO UPDATE`).
+- Fallbacks for a temporarily unavailable store (for example an on-disk status
+  copy) are read-only and advisory; they never become a second source of truth.
+
+Rationale: high availability and horizontal scaling are only possible when
+adding, removing, or restarting an instance changes nothing about the system's
+state. Externalising state is what makes the API boundary in Principle III a
+scaling seam rather than a diagram.
+
+### V. Security and Untrusted Input by Default
 
 Every input from outside the process is hostile until validated:
 
@@ -150,7 +187,7 @@ Rationale: these projects mediate business-critical documents and call external
 or local models. Assuming hostile input and keeping credentials server-side
 contains both the injection and the credential-leak classes of attack.
 
-### V. Tests Accompany Every Behaviour Change
+### VI. Tests Accompany Every Behaviour Change
 
 Every behaviour change ships with its tests in the same change:
 
@@ -174,7 +211,7 @@ Rationale: tests are the executable record of intended behaviour. Requiring
 them alongside every change, without dictating authoring order, keeps the safety
 net current without ceremony.
 
-### VI. Consistent, Linted, Typed Code
+### VII. Consistent, Linted, Typed Code
 
 One style per language, enforced by tooling, as part of the definition of done:
 
@@ -191,7 +228,7 @@ Rationale: consistent style removes review noise and makes diffs about
 behaviour. Naming deferred tooling keeps the principle honest until it is
 enforceable.
 
-### VII. Configuration Over Hardcoding; Degrade Gracefully
+### VIII. Configuration Over Hardcoding; Degrade Gracefully
 
 The whole system runs on a laptop and in production from the same code:
 
@@ -211,7 +248,7 @@ Rationale: a stack that only works with every external dependency present is a
 stack nobody can run, test, or demo. Fallbacks and configuration make the
 "clone → run in five commands" quickstart true.
 
-### VIII. Observability and Auditable Provenance
+### IX. Observability and Auditable Provenance
 
 Anything the system decides can be reconstructed afterwards from stored state:
 
@@ -232,7 +269,7 @@ Rationale: business decisions and model outputs must be auditable after the
 fact. Structured logs plus stored inputs make every result traceable to a
 verifiable input.
 
-### IX. Simplicity and Honest Scope
+### X. Simplicity and Honest Scope
 
 Build the smallest thing that satisfies the spec, and say what it is:
 
@@ -302,9 +339,9 @@ numbers; do not replace them with aspirational language.
 | Characteristic | Target |
 |---|---|
 | Performance | API p95 < [API_P95_MS] ms; status poll p95 < 200 ms; page load < 2 s on 4G |
-| Reliability | [UPTIME_TARGET]% uptime over 30 days; a single worker/agent failure never crashes the runner; graceful `SIGINT`/`SIGTERM` |
-| Security | Principle IV enforced; zero secrets in source; auth on every endpoint |
-| Maintainability | Principle VII: no hardcoded values; one shared config module; every module has a test file |
+| Reliability | [UPTIME_TARGET]% uptime over 30 days; any instance serves any request (Principle IV); a single worker/agent failure never crashes the runner; graceful `SIGINT`/`SIGTERM` |
+| Security | Principle V enforced; zero secrets in source; auth on every endpoint |
+| Maintainability | Principle VIII: no hardcoded values; one shared config module; every module has a test file |
 | Usability / accessibility | WCAG 2.1 AA; inline form validation; recover from errors without reload |
 | Portability | Full stack runs locally with documented commands; switching hosting adapter changes no application logic |
 
