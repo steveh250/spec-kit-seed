@@ -142,25 +142,31 @@ agent tier be swapped, restarted, or scaled without touching the web tier.
 Any instance of a service can serve any request, and any instance can be
 restarted or replaced without losing work:
 
-- Services behind the API boundary MUST hold no state between requests that
-  another instance, or the same instance after a restart, would need. Sessions,
-  job and step status, queues, uploaded files, generated outputs, and any cache
-  with correctness implications MUST live in an external store: the database,
-  object storage, or a managed cache.
-- Local disk and process memory MAY be used only as scratch space for a single
-  in-flight operation, and the operation MUST be recoverable if that scratch is
-  lost. A file that must outlive the request or be visible to another process
-  is written to external storage first.
+- State lives outside the running process, never only in process memory.
+  Sessions, job and step status, queues, uploaded files, generated outputs, and
+  any cache with correctness implications MUST be persisted to a store that
+  survives a restart: the database, files on disk, object storage, or a managed
+  cache. Which store is appropriate is a `plan.md` decision; that it is outside
+  the process is not.
+- Process memory MAY hold only transient working data for a single in-flight
+  operation, and the operation MUST be recoverable if the process dies.
+  Anything that must outlive the request or be visible to another process is
+  written out before the operation is reported complete.
+- Where more than one instance of a service runs, every store it depends on
+  MUST be reachable by every instance (a shared database, a shared volume, or
+  a bucket), so that any instance can serve any request. Per-instance-only
+  files hold nothing another instance would need.
 - Long-running workers MUST be restartable: a job interrupted mid-flight is
   re-claimable by any worker (lease or heartbeat on the claimed row), not lost
   or duplicated. Step recording is idempotent (`ON CONFLICT … DO UPDATE`).
-- Fallbacks for a temporarily unavailable store (for example an on-disk status
-  copy) are read-only and advisory; they never become a second source of truth.
+- Where two stores hold the same state (for example a database row and an
+  on-disk status file), one is declared the source of truth in
+  `docs/ARCHITECTURE.md` and the other is a fallback that is reconciled to it.
 
-Rationale: high availability and horizontal scaling are only possible when
-adding, removing, or restarting an instance changes nothing about the system's
-state. Externalising state is what makes the API boundary in Principle III a
-scaling seam rather than a diagram.
+Rationale: high availability and restartability depend on a process being
+disposable. If everything it knows is written outside itself, an instance can
+be added, replaced, or restarted without losing work, and the API boundary in
+Principle III becomes a scaling seam rather than a diagram.
 
 ### V. Security and Untrusted Input by Default
 
