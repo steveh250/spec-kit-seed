@@ -26,6 +26,9 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
 
 - `.specify/scripts/bash/preflight.sh` — prints the active feature, which artifacts exist,
   and the next valid phase; read-only, never writes `feature.json`, never touches git.
+- `.specify/templates/constitution-sample.md` — a pre-filled constitution baseline (the
+  owner's recurring principles, with `[ALL_CAPS]` tokens for project-specific values).
+  `speckit-constitution` starts from it when present. Not an upstream file.
 - `.claude/skills/speckit-*/SKILL.md` (9 skills) — generated from the upstream
   `templates/commands/*.md` prompts (see deviations below).
 - The `## Spec-Driven Development (SDD)` section pasted into this repo's root `CLAUDE.md`.

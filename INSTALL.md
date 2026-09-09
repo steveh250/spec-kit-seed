@@ -24,6 +24,7 @@ CLAUDE.snippet.md              ← source text to merge into the target repo's C
 ├── memory/constitution.md     ← unfilled template — filled per project
 ├── scripts/bash/*.sh          ← preflight / prerequisite / path resolution
 ├── templates/*.md             ← the five spec-kit templates
+├── templates/constitution-sample.md ← pre-filled constitution baseline (reusable principles)
 └── upstream/v0.15.1/          ← pristine upstream baseline, for upgrades
 ```
 
@@ -137,6 +138,11 @@ gates in `speckit-plan` / `speckit-tasks` / `speckit-implement` stay locked unti
   own layout and build/test commands.
 - The constitution ships as an **unfilled template** and `feature.json` as
   `{"feature_directory": ""}` (no active feature), so every seeded project starts clean.
+- **`constitution-sample.md`** (in `.specify/templates/`) is a pre-filled baseline carrying
+  the principles that recur across the owner's projects; only its `[ALL_CAPS]` tokens are
+  project-specific. `speckit-constitution` uses it as the starting point when present, so the
+  gates stay locked until those tokens are replaced. Edit the sample in the seed to change the
+  house rules for every future project.
 - **No feature branches required.** Features are identified by directory + `feature.json`,
   never by branch, so the seed drops into repos that only have long-lived branches (e.g.
   `development` / `hotfix` / `main`) without any change. Fill the `Branch model` line in the

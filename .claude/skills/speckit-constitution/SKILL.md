@@ -11,6 +11,7 @@ You are in a **Claude Code cloud session**: all work stays on the **current git 
 
 1. Run `bash .specify/scripts/bash/preflight.sh` to print the active feature, which artifacts exist, and the next valid phase.
 2. This is the first SDD phase and has **no prerequisite artifact**. If `.specify/memory/constitution.md` is missing, seed it from `.specify/templates/constitution-template.md` first (never overwrite an existing constitution).
+3. **Baseline sample.** If `.specify/templates/constitution-sample.md` exists **and** the current constitution is still the unfilled upstream template (every `[PLACEHOLDER]` token untouched), copy the sample over `.specify/memory/constitution.md` and work from it: its principles are the owner's cross-project defaults. Present them to the user as the proposed set (they may drop, add, or reword any), then collect only the sample's `[ALL_CAPS]` project-specific values (stack, coverage numbers, branch model, deployables, dates) and decide which *Applicability*-marked sections apply. Delete the sample's leading "how to use" comment once adopted. Never copy the sample over a constitution that has already been filled or amended.
 
 Do not proceed past this Preflight until the gate above is satisfied.
 

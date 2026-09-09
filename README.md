@@ -15,6 +15,9 @@ the web — no terminal required**.
   plan → tasks → analyze → checklist → implement → converge.
 - **`.specify/`** — the scripts, templates, an unfilled constitution, and the pinned upstream
   baseline the skills rely on.
+- **`.specify/templates/constitution-sample.md`** — a pre-filled constitution baseline with
+  the principles that recur across projects; `speckit-constitution` starts from it and asks
+  only about what differs.
 - **`CLAUDE.snippet.md`** — the SDD routing section to drop into a project's `CLAUDE.md`.
 - **`INSTALL.md`** — the full install + upgrade reference.
 
