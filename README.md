@@ -78,6 +78,10 @@ example prompts for each phase:** [`USAGE.md`](USAGE.md).
 
 Licensed under the [MIT License](LICENSE).
 
+## Some Notes
+* Setup branch protetion (be careful enabling approvals when you are getting started)
+* Move the default branch from main to, say, development (also helps protect development from deletion)
+
 Built on [github/spec-kit](https://github.com/github/spec-kit) (MIT, © GitHub, Inc.), pinned
 to release **v0.15.1** and adapted into Claude Code skills for cloud sessions. The upstream
 copyright is preserved in [`LICENSE`](LICENSE); what was taken verbatim vs. adapted, and why,
