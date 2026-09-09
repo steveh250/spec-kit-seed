@@ -51,6 +51,13 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
    branch-creation hook language and all branch prose in the specify prompt were removed and
    replaced with an explicit "stay on the current branch" policy. The installed core scripts
    (`common.sh`, `check-prerequisites.sh`) are already branch-free upstream at this tag.
+   A consequence worth stating: the workflow is **branch-model agnostic**. It runs unchanged
+   in repos that have no feature branches at all (e.g. only `development` / `hotfix` / `main`)
+   — all phases execute on whichever long-lived branch is checked out, and multiple features
+   coexist there as separate `specs/features/<NNN-…>/` directories. Where a template prints a
+   `Branch` field, `common.sh` falls back to the feature directory basename as the identifier.
+   The skills' "cloud session" preamble applies verbatim on the desktop client too; the only
+   difference is that the user, not the platform, chooses the branch before the session starts.
 
 4. **Scripts scoped to path resolution + prerequisite checks only.** `setup-plan.sh` and
    `setup-tasks.sh` were **not** installed; the `speckit-plan` and `speckit-tasks` skills
