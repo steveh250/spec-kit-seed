@@ -20,6 +20,12 @@ the web — no terminal required**.
 
 Single-deployable by default; multi-deployable (monorepo) task tagging is an opt-in.
 
+Branch-model agnostic: features are identified by `specs/features/<NNN-…>/` and
+`.specify/feature.json`, never by a git branch, so it works with per-feature branches **or**
+with a fixed `development` / `hotfix` / `main` layout that has no feature branches at all (see
+["Working without feature branches"](USAGE.md#working-without-feature-branches-eg-development--hotfix--main)
+in `USAGE.md`). Works from Claude Code on the web or the desktop client.
+
 ## Initialise a new project from this seed
 
 **One time — turn this into a template repo:** in this repo's **Settings**, tick **Template
@@ -34,8 +40,10 @@ repository**. (Step 0 in [`INSTALL.md`](INSTALL.md) covers creating the seed rep
 
    > This repo was created from a spec-kit seed template. Finalize the install: merge the two
    > sections of `CLAUDE.snippet.md` into `CLAUDE.md` (create `CLAUDE.md` if absent) and fill
-   > every `<FILL IN>` placeholder from this repo's real install/test/lint/run commands; then
-   > delete `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not project files).
+   > every `<FILL IN>` placeholder — build/test/lint/run commands from this repo's real
+   > tooling, and the branch model from its existing branches (say so if there are no feature
+   > branches); then delete `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not
+   > project files).
    > Run `bash .specify/scripts/bash/preflight.sh` to verify, then commit and push to the
    > current branch.
 

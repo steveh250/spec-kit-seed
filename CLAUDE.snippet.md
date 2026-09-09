@@ -74,8 +74,17 @@ is missing.
 - Constitution principles are non-negotiable; conflicts are resolved by changing the
   spec/plan/tasks, or by an explicit constitution amendment — never by silently ignoring them.
 
-**Cloud-session rules:**
+**Branch & session rules:**
 - Work on the **current git branch only**. Never `git checkout -b`, `git switch -c`, or
-  `git branch` — a cloud session can only push to the current branch.
+  `git branch` — a cloud session can only push to the current branch, and on the desktop
+  client the user checks out the intended branch before the session starts.
+- Branch model: `<FILL IN>`
+  <!-- FILL IN: state the repo's branches and where SDD work lands. Feature-branch repos:
+       e.g. "one feature branch per feature, PR into main". No-feature-branch repos:
+       e.g. "long-lived development / hotfix / main only; all SDD phases (specs, plans,
+       tasks, code) run on development, which is promoted to main; hotfix carries urgent
+       fixes and is merged back into development. No per-feature branches are ever
+       created." Features are identified by specs/features/<NNN-short-name>/ and
+       .specify/feature.json, never by a branch, so either model works unchanged. -->
 - Commit artifacts as they are produced (spec, plan, tasks, code).
 - One phase per session; hand off to the next phase in a fresh session.

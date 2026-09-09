@@ -59,8 +59,10 @@ of the seed:
 
    > This repo was created from a spec-kit seed template. Finalize the install: merge the two
    > sections of `CLAUDE.snippet.md` into `CLAUDE.md` (create `CLAUDE.md` if absent) and fill
-   > every `<FILL IN>` placeholder from this repo's real install/test/lint/run commands; then
-   > delete `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not project files).
+   > every `<FILL IN>` placeholder — build/test/lint/run commands from this repo's real
+   > tooling, and the branch model from its existing branches (say so if there are no feature
+   > branches); then delete `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not
+   > project files).
    > Run `bash .specify/scripts/bash/preflight.sh` to verify, then commit and push to the
    > current branch.
 
@@ -79,9 +81,9 @@ any other project):
    > **`<owner>/spec-kit-seed`**, with its files at the repo root. Add that seed repo to the
    > session so you can read it, copy `.claude/` and `.specify/` in verbatim, merge the
    > `CLAUDE.snippet.md` sections into `CLAUDE.md` and fill the `<FILL IN>` placeholders from
-   > this repo's real tooling, run `bash .specify/scripts/bash/preflight.sh` to verify, then
-   > commit and push to the current branch. Do not copy `INSTALL.md` or `CLAUDE.snippet.md`
-   > into this repo.
+   > this repo's real tooling and existing branches, run
+   > `bash .specify/scripts/bash/preflight.sh` to verify, then commit and push to the current
+   > branch. Do not copy `INSTALL.md` or `CLAUDE.snippet.md` into this repo.
 
 If your web environment's network policy blocks adding the seed repo, tell Claude to read the
 seed's files individually from GitHub instead — the manifest above is the file list.
@@ -96,14 +98,18 @@ These run **inside the web session**, executed by Claude — not steps you type:
    has spec-kit.
 2. Wire up CLAUDE.md from `CLAUDE.snippet.md`'s two sections (`## Build, test & lint` and
    `## Spec-Driven Development (SDD)`): create or merge, don't duplicate an existing build/test
-   section, fill every `<FILL IN>` from the repo's real commands, and delete the snippet's
-   leading HTML comment and any multi-deployable note that doesn't apply.
+   section, fill every `<FILL IN>` from the repo's real commands and its existing branches
+   (the `Branch model` line — e.g. "development / hotfix / main, no feature branches; SDD work
+   runs on development"), and delete the snippet's leading HTML comment and any
+   multi-deployable note that doesn't apply.
 3. Delete `INSTALL.md` and `CLAUDE.snippet.md`.
 4. Verify with `bash .specify/scripts/bash/preflight.sh` — expect `Constitution:
    still-template`, `Active feature: (none resolved)`, `Next valid phase: speckit-constitution
    … then speckit-specify`.
 5. Commit and push to the current branch (cloud sessions only push to the current branch;
-   never create or switch branches).
+   never create or switch branches). On the desktop client, check out the branch you want the
+   install to land on **before** starting the session — for a `development` / `hotfix` / `main`
+   repo with no feature branches that is normally `development`.
 
 ---
 
@@ -131,6 +137,11 @@ gates in `speckit-plan` / `speckit-tasks` / `speckit-implement` stay locked unti
   own layout and build/test commands.
 - The constitution ships as an **unfilled template** and `feature.json` as
   `{"feature_directory": ""}` (no active feature), so every seeded project starts clean.
+- **No feature branches required.** Features are identified by directory + `feature.json`,
+  never by branch, so the seed drops into repos that only have long-lived branches (e.g.
+  `development` / `hotfix` / `main`) without any change. Fill the `Branch model` line in the
+  snippet's `Branch & session rules` block so sessions know where SDD work lands; the workflow
+  notes are in `USAGE.md` ("Working without feature branches").
 
 ## Upgrading spec-kit later
 

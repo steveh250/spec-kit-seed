@@ -31,7 +31,52 @@ for its skill by name; Claude runs the scripts, writes the artifacts, and commit
   - Any change in behaviour updates `spec.md` (and `plan.md`/`tasks.md` if affected) **before**
     the code. If a phase stops with a gate message, it's telling you which earlier phase to run.
 - **Stay on the current branch.** Cloud sessions only push to the branch they're on; the skills
-  never create or switch branches.
+  never create or switch branches. This holds on the Claude desktop client too: the skills
+  commit to whatever branch is checked out when the session starts, so check out the right
+  branch *before* invoking a skill. If your repo has no feature branches at all, see the next
+  section.
+
+---
+
+## Working without feature branches (e.g. `development` / `hotfix` / `main`)
+
+Many solo or small-team repos use a fixed set of long-lived branches — typically `development`,
+`hotfix`, and `main` — and never create per-feature branches. **spec-kit as installed by this
+seed works unchanged in that model.** Nothing in the workflow depends on a feature branch
+existing:
+
+- **A feature is a directory, not a branch.** The active feature is
+  `specs/features/<NNN-short-name>/`, recorded in `.specify/feature.json`. Every phase reads
+  that file; none of them look at the git branch name. Several features can live side by side
+  on the same branch with no conflict — each has its own `spec.md` / `plan.md` / `tasks.md`.
+- **Run every SDD phase on your integration branch** (`development` in the example above).
+  Check it out first (desktop) or open the session on it (web), then invoke the skill. Specs,
+  plans, tasks, and code all land there as ordinary commits, and reach `main` however you
+  already promote `development` → `main` (merge or PR). Don't run phases directly on `main`.
+- **Only one feature is *active* at a time** — the one `feature.json` points to. To work on a
+  different feature that already has a directory, either ask Claude to repoint
+  `.specify/feature.json` at it (e.g. *"Set the active feature to
+  `specs/features/002-report-export`"*), or set `SPECIFY_FEATURE_DIRECTORY` for that session.
+  Run preflight afterwards to confirm. Nothing about the old feature is lost; it's just no
+  longer the target of the next phase.
+- **Keep the shared branch shippable.** Because implementation lands on the same branch other
+  work uses, implement **one user story per session** (the MVP story first) and commit only
+  when tests pass. `tasks.md` is organised by story so each increment is independently
+  testable; unfinished stories simply stay unchecked. `speckit-converge` tells you what remains.
+- **Hotfixes.** The spec-before-code gate still applies: a behaviour change on `hotfix` should
+  update the affected feature's `spec.md` (and `plan.md`/`tasks.md` if relevant) in the same
+  commit. For a fix too small to deserve a feature directory, just edit the existing spec that
+  describes the behaviour. When `hotfix` is merged back into `development`, take
+  `development`'s `.specify/feature.json` if the two ever conflict — it's the only spec-kit
+  file that can.
+- **The `Feature Branch` / `Branch` lines in `spec.md` and `plan.md`** are inherited from
+  upstream's templates. Without feature branches they carry the feature directory name (e.g.
+  `003-user-auth`) — the scripts fall back to it as the identifier. Treat it as a label, not
+  as a claim that such a git branch exists.
+
+Record your branch model in `CLAUDE.md` (the `Branch & session rules` block in
+`CLAUDE.snippet.md` has a placeholder for it) so every session knows which branch to expect
+to be on.
 
 ---
 
