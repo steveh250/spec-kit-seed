@@ -98,6 +98,17 @@ Open a Claude Code web session on the repo and say something like:
 You don't have to supply principles up front — you can just say "help me write our
 constitution" and answer Claude's questions.
 
+The seed ships a **pre-filled baseline**, `.specify/templates/constitution-sample.md`: ten
+principles (spec before code, docs as a build artifact, hard tier boundaries behind a
+versioned API with logic in code not the database, stateless services with external state,
+untrusted input by default, tests with every change, linted and typed code, configuration
+over hardcoding, auditable provenance, honest scope) plus stack, database-change (EMC),
+ISO 25010 quality, and workflow sections. Only its `[ALL_CAPS]` tokens are project-specific. The skill starts from it
+when it exists, so a session mostly confirms the stack, coverage numbers, branch model, and
+which optional sections apply. To adopt it by hand instead, copy it over
+`.specify/memory/constitution.md` and replace every token; the gates stay locked until none
+remain.
+
 ### 2. Answer Claude's questions
 
 The skill will:
