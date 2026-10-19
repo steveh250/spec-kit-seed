@@ -7,9 +7,9 @@ description: Create or update this project's engineering constitution (.specify/
 
 ## Preflight — run before anything else
 
-You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The active feature is resolved from `.specify/feature.json` (override with `SPECIFY_FEATURE_DIRECTORY`), never from the branch name.
+You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The feature is never inferred from the branch name.
 
-1. Run `bash .specify/scripts/bash/preflight.sh` to print the active feature, which artifacts exist, and the next valid phase.
+1. Run `bash .specify/scripts/bash/preflight.sh` to print the constitution status and every feature with its next valid phase.
 2. This is the first SDD phase and has **no prerequisite artifact**. If `.specify/memory/constitution.md` is missing, seed it from `.specify/templates/constitution-template.md` first (never overwrite an existing constitution).
 3. **Baseline sample.** If `.specify/templates/constitution-sample.md` exists **and** the current constitution is still the unfilled upstream template (every `[PLACEHOLDER]` token untouched), copy the sample over `.specify/memory/constitution.md` and work from it: its principles are the owner's cross-project defaults. Present them to the user as the proposed set (they may drop, add, or reword any), then collect only the sample's `[ALL_CAPS]` project-specific values (stack, coverage numbers, branch model, deployables, dates) and decide which *Applicability*-marked sections apply. Delete the sample's leading "how to use" comment once adopted. Never copy the sample over a constitution that has already been filled or amended.
 
@@ -88,7 +88,9 @@ Follow this execution flow:
    - Ensure each Principle section: succinct name line, paragraph (or bullet list) capturing non‑negotiable rules, explicit rationale if not obvious.
    - Ensure Governance section lists amendment procedure, versioning policy, and compliance review expectations.
 
-4. Produce a Sync Impact Report (prepend as an HTML comment at top of the constitution file after update):
+4. Produce a Sync Impact Report as an HTML comment at the top of the constitution file after update.
+   This report is temporary scratch material for human review of the amendment, not governance
+   content; it is expected to be removed before the amended constitution file is committed.
    - Version change: old → new
    - List of modified principles (old title → new title if renamed)
    - Added sections
@@ -120,4 +122,4 @@ If the user supplies partial updates (e.g., only one principle revision), still 
 
 If critical info missing (e.g., ratification date truly unknown), insert `TODO(<FIELD_NAME>): explanation` and include in the Sync Impact Report under deferred items.
 
-Do not create a new template; always operate on the existing `.specify/memory/constitution.md` file.
+Write only `.specify/memory/constitution.md`; do not create or modify template source files (`.specify/templates/`).

@@ -12,7 +12,7 @@ upstream release tag and adapted — **not** reconstructed from memory. The pris
 sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
 
 - Upstream: `github/spec-kit`
-- Release tag: **v0.15.1**
+- Release tag: **v1.2.2** (refreshed from v0.15.1 — see "Changes in the v1.2.2 refresh" below)
 
 ## Installed verbatim (unmodified from upstream)
 
@@ -24,8 +24,14 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
 
 ## Authored for the seed (repo-agnostic)
 
-- `.specify/scripts/bash/preflight.sh` — prints the active feature, which artifacts exist,
-  and the next valid phase; read-only, never writes `feature.json`, never touches git.
+- `.specify/scripts/bash/preflight.sh` — prints constitution status and every feature under
+  `specs/features/` with its next valid phase (`preflight.sh <feature>` for one feature's
+  artifacts); read-only, never writes `feature.json`, never touches git.
+- `.specify/.gitignore` — ignores `feature.json`, mirroring the managed `.specify/.gitignore`
+  upstream's `specify init` writes (upstream treats the pointer as machine-local state).
+- `.specify/integration.json` — a minimal stand-in for the file `specify init` writes; it only
+  sets `invoke_separator: "-"` so script error messages name skills as `/speckit-plan` rather
+  than upstream's default `/speckit.plan`.
 - `.specify/templates/constitution-sample.md` — a pre-filled constitution baseline (the
   owner's recurring principles, with `[ALL_CAPS]` tokens for project-specific values).
   `speckit-constitution` starts from it when present. Not an upstream file.
@@ -43,14 +49,14 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
 2. **Preflight hard-stops.** Every skill opens with a Preflight block that resolves the
    active feature and stops with an actionable message if its prerequisite artifact is
    missing (plan requires spec.md and no unresolved `[NEEDS CLARIFICATION]`; tasks require
-   plan.md; analyze/implement/converge require plan.md + tasks.md; etc.). Upstream relied
+   plan.md; implement requires plan.md + tasks.md; analyze/converge also require spec.md,
+   matching upstream's `--require-spec` since v1.0.3; etc.). Upstream relied
    on the invoking command's `scripts:` frontmatter alone.
 
 3. **No branching / no git extension.** Cloud sessions can only push to the current branch,
    so nothing here creates or switches branches. spec-kit's separate *git extension* and
-   `create-new-feature.sh` were **not** installed. The active feature resolves solely from
-   `.specify/feature.json` (`feature_directory` key), overridable via
-   `SPECIFY_FEATURE_DIRECTORY` — never from a git branch name. The `before_specify`
+   `create-new-feature.sh` were **not** installed. The feature resolves from the user's
+   request (see deviation 11) — never from a git branch name. The `before_specify`
    branch-creation hook language and all branch prose in the specify prompt were removed and
    replaced with an explicit "stay on the current branch" policy. The installed core scripts
    (`common.sh`, `check-prerequisites.sh`) are already branch-free upstream at this tag.
@@ -79,7 +85,7 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
 7. **Feature artifacts namespaced under `specs/features/`.** Feature artifacts install under
    `specs/features/<NNN-short-name>/` so they never interleave with any pre-existing design
    docs at the top level of `specs/`. (`common.sh` / `check-prerequisites.sh` resolve the
-   nested path correctly from `.specify/feature.json` — they read the directory value and
+   nested path correctly from `SPECIFY_FEATURE_DIRECTORY` — they read the directory value and
    never assume `specs/` depth.)
 
 8. **Explicit sequential numbering in `speckit-specify`.** Because `create-new-feature.sh`
@@ -101,10 +107,23 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
     describes two or more deployables. (An earlier monorepo install hardcoded per-deployable
     tags; the seed generalizes that to opt-in.)
 
+11. **The feature is named per request; `feature.json` is never committed.** Upstream keeps
+    a single `.specify/feature.json` pointer (written by `speckit.specify`, git-ignored by
+    `specify init`) and, since v1.0.11, offers `SPECIFY_FEATURE_DIRECTORY` +
+    `SPECIFY_FEATURE_NO_PERSIST` for concurrent agents. In cloud sessions each session is a
+    fresh clone, so a git-ignored pointer doesn't survive between phases, and a committed one
+    makes parallel sessions on different features collide. The seed therefore resolves the
+    feature in every skill's preamble, in order: the feature named in the user's request
+    (`002`, `002-name`, or a path) → `SPECIFY_FEATURE_DIRECTORY` → a local `feature.json` →
+    the only directory in `specs/features/` → stop and ask. Every script call is pinned with
+    `SPECIFY_FEATURE_DIRECTORY=<dir> SPECIFY_FEATURE_NO_PERSIST=1`. `speckit-specify` still
+    writes a local `feature.json` for the rest of its own session, and pulls the current
+    branch before numbering to reduce duplicate numbers across sessions.
+
 ## Upstream baseline (for upgrades)
 
 The unmodified upstream sources this install was adapted from are stored under
-`.specify/upstream/v0.15.1/`:
+`.specify/upstream/v1.2.2/`:
 
 - `commands/` — all ten `templates/commands/*.md` prompt bodies (the nine adapted into
   skills, plus `taskstoissues.md` which has no skill), verbatim.
@@ -112,11 +131,41 @@ The unmodified upstream sources this install was adapted from are stored under
 
 **How to upgrade to a newer spec-kit release (e.g. vX):** fetch the new upstream
 `commands/` and `templates/` into `.specify/upstream/vX/`, then **diff `upstream/vX`
-against `upstream/v0.15.1`** to see exactly what upstream changed. Re-apply the deviations
+against `upstream/v1.2.2`** to see exactly what upstream changed. Re-apply the deviations
 recorded above to those changed sections and regenerate the adapted
 `.claude/skills/speckit-*/SKILL.md`. Do **not** diff a new upstream release directly
 against the adapted skills — the adaptations would swamp the real upstream delta and hide
 it. The upstream-vs-upstream diff is the signal; the recorded deviations are the patch.
+
+## Changes in the v1.2.2 refresh (from v0.15.1)
+
+Upstream moved 563 commits between these tags; nearly all of it is in machinery the seed
+does not install (the Python `specify` CLI, agent integrations, presets, extension/bundle
+catalogs, the workflow engine, the MCP server). What reached the seed:
+
+- **Checklists are reviewer-owned** (`speckit-checklist`, `checklist-template.md`): `[x]` on
+  a custom checklist means a reviewer judged that requirement well-written, not that work is
+  done; the skill never pre-checks items. `speckit-implement` reads checklists as a
+  read-only gate (Checked / Unchecked) and never edits them.
+- **Converge distrusts checkboxes:** every task is reassessed regardless of `[x]` —
+  "completion claims are not evidence" — and code that exceeds or contradicts intent is
+  flagged too. Expect the first converge after upgrading to find previously "done" gaps.
+- **Tasks quote data-model constraints** (max length, nullability, enums, validation)
+  verbatim.
+- **Clarify defers less:** only questions about implementation method, stack choice, or task
+  breakdown are deferred to planning.
+- **analyze / converge require spec.md**; `check-prerequisites.sh` gains `--require-spec`
+  and `--template NAME`, and rejects an empty `plan.md`.
+- **Constitution:** the Sync Impact Report is temporary review material, removed before the
+  amendment is committed; the skill writes only `.specify/memory/constitution.md`.
+- `plan` reads `FEATURE_DIR` (was `SPECS_DIR`); `common.sh` adds UTF-8 `feature.json`
+  reads, `SPECKIT_PYTHON` override, and preset/extension template resolution (inert here —
+  no `.specify/presets/` or `.specify/extensions/`).
+- Not adopted: upstream's `resolve-template.sh` (constitution template via presets — the
+  seed's `constitution-sample.md` flow is kept), the deprecated `taskstoissues`, and the
+  optional `bug` / `assess` extensions.
+- Seed-side change made at the same time: deviation 11 (feature named per request,
+  `feature.json` git-ignored).
 
 ## Re-running / updating
 

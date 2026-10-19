@@ -1,0 +1,4 @@
+# Machine-local Spec Kit state (mirrors upstream spec-kit's managed .specify/.gitignore).
+# feature.json is a per-session pointer to the feature being worked on; it is never
+# committed, so parallel sessions on different features cannot collide on it.
+feature.json

@@ -7,10 +7,11 @@ description: Write or update the feature specification (spec.md) for a capabilit
 
 ## Preflight — run before anything else
 
-You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The active feature is resolved from `.specify/feature.json` (override with `SPECIFY_FEATURE_DIRECTORY`), never from the branch name.
+You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The feature is never inferred from the branch name.
 
-1. Run `bash .specify/scripts/bash/preflight.sh` to print the active feature, which artifacts exist, and the next valid phase.
-2. This phase **creates** a feature; it does not require an existing one. If `.specify/feature.json` already points to an in-progress feature, confirm with the user before starting a new feature rather than silently switching.
+1. Run `bash .specify/scripts/bash/preflight.sh` to print the constitution status and every feature with its next valid phase.
+2. This phase **creates** a feature; it does not require an existing one, and it never switches or overwrites another feature. If the user's request names an **existing** feature directory (to revise its spec), work on that one instead of allocating a new number.
+3. Before numbering, make sure you see features other sessions have already pushed: `git fetch origin <current-branch>` and, if the remote is ahead, `git pull --ff-only origin <current-branch>` (skip silently if there is no remote or the pull is not fast-forward; just note it in your report).
 
 Do not proceed past this Preflight until the gate above is satisfied.
 
@@ -75,19 +76,23 @@ Given that feature description, do this:
    - Use the template at `.specify/templates/spec-template.md`
    - Copy the `spec-template` file to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
    - Set `SPEC_FILE` to `SPECIFY_FEATURE_DIRECTORY/spec.md`
-   - Persist the resolved path to `.specify/feature.json`:
+   - Record the resolved path in `.specify/feature.json` as a **local, untracked** convenience
+     for the rest of this session (the file is git-ignored — never `git add -f` it):
      ```json
      {
        "feature_directory": "<resolved feature dir>"
      }
      ```
      Write the actual resolved directory path value (for example, `specs/features/003-user-auth`),
-     not the literal string `SPECIFY_FEATURE_DIRECTORY`. Downstream skills (`speckit-plan`,
-     `speckit-tasks`, etc.) locate the feature from this value, never from a git branch name.
+     not the literal string `SPECIFY_FEATURE_DIRECTORY`. Later sessions do **not** see this file:
+     downstream skills (`speckit-plan`, `speckit-tasks`, etc.) locate the feature from the user
+     naming it (e.g. "speckit-plan for 003"), or automatically when it is the only feature —
+     never from a git branch name. Tell the user the feature id in your completion report.
 
    **IMPORTANT**:
    - You must only create one feature per `speckit-specify` invocation
-   - The feature is identified by its directory and `.specify/feature.json`, never by a git branch name
+   - The feature is identified by its directory (`specs/features/<NNN>-<short-name>`), never by a git branch name or a committed pointer file
+   - If two sessions on different branches both allocate the same number, the one merged second renames its directory to the next free number after the merge (never renumber the one already merged)
    - The spec directory and file are always created by this skill
 
 4. Load the resolved active `spec-template` file to understand required sections.
@@ -219,9 +224,9 @@ Report completion to the user with:
 - `SPECIFY_FEATURE_DIRECTORY` — the feature directory path
 - `SPEC_FILE` — the spec file path
 - Checklist results summary
-- Readiness for the next phase (`speckit-clarify` or `speckit-plan`)
+- Readiness for the next phase (`speckit-clarify` or `speckit-plan`), phrased with the feature id so the user can paste it into a later session (e.g. *"Use speckit-plan for feature 003"*)
 
-**NOTE:** Branch creation is handled by the `before_specify` hook (git extension). Spec directory and file creation are always handled by this core command.
+**NOTE:** No branch is created or switched (cloud sessions stay on the current branch). Spec directory and file creation are always handled by this skill.
 
 ## Quick Guidelines
 

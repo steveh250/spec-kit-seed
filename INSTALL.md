@@ -20,12 +20,13 @@ CLAUDE.snippet.md              ← source text to merge into the target repo's C
 └── skills/speckit-*/SKILL.md  ← 9 SDD phase skills
 .specify/
 ├── README.md                  ← provenance + upgrade guide (keep — it travels into each project)
-├── feature.json               ← reset to no active feature
+├── .gitignore                 ← keeps feature.json (per-session state) out of git
+├── integration.json           ← makes script messages name skills as /speckit-<phase>
 ├── memory/constitution.md     ← unfilled template — filled per project
 ├── scripts/bash/*.sh          ← preflight / prerequisite / path resolution
 ├── templates/*.md             ← the five spec-kit templates
 ├── templates/constitution-sample.md ← pre-filled constitution baseline (reusable principles)
-└── upstream/v0.15.1/          ← pristine upstream baseline, for upgrades
+└── upstream/v1.2.2/           ← pristine upstream baseline, for upgrades
 ```
 
 Single-deployable by default. Multi-deployable (monorepo) task tagging is an opt-in
@@ -95,8 +96,7 @@ These run **inside the web session**, executed by Claude — not steps you type:
 
 1. Ensure `.claude/skills/speckit-*/` and `.specify/` are present at the repo root (already
    there with the template path; copied in on the alternative path). Never overwrite an
-   existing `.specify/memory/constitution.md` or `.specify/feature.json` if the repo already
-   has spec-kit.
+   existing `.specify/memory/constitution.md` if the repo already has spec-kit.
 2. Wire up CLAUDE.md from `CLAUDE.snippet.md`'s two sections (`## Build, test & lint` and
    `## Spec-Driven Development (SDD)`): create or merge, don't duplicate an existing build/test
    section, fill every `<FILL IN>` from the repo's real commands and its existing branches
@@ -136,15 +136,17 @@ gates in `speckit-plan` / `speckit-tasks` / `speckit-implement` stay locked unti
   proposing a code-quality principle, rather than assuming any stack.
 - **CLAUDE.md** ships as a snippet with `<FILL IN>` placeholders, so each project states its
   own layout and build/test commands.
-- The constitution ships as an **unfilled template** and `feature.json` as
-  `{"feature_directory": ""}` (no active feature), so every seeded project starts clean.
+- The constitution ships as an **unfilled template** and there is no `feature.json` (it is
+  git-ignored per-session state), so every seeded project starts clean.
 - **`constitution-sample.md`** (in `.specify/templates/`) is a pre-filled baseline carrying
   the principles that recur across the owner's projects; only its `[ALL_CAPS]` tokens are
   project-specific. `speckit-constitution` uses it as the starting point when present, so the
   gates stay locked until those tokens are replaced. Edit the sample in the seed to change the
   house rules for every future project.
-- **No feature branches required.** Features are identified by directory + `feature.json`,
-  never by branch, so the seed drops into repos that only have long-lived branches (e.g.
+- **Parallel features.** Because no feature pointer is committed, separate sessions can work
+  on different features at once (see "Several features in parallel" in `USAGE.md`).
+- **No feature branches required.** Features are identified by their directory (named in
+  each phase prompt), never by branch, so the seed drops into repos that only have long-lived branches (e.g.
   `development` / `hotfix` / `main`) without any change. Fill the `Branch model` line in the
   snippet's `Branch & session rules` block so sessions know where SDD work lands; the workflow
   notes are in `USAGE.md` ("Working without feature branches").
@@ -153,8 +155,30 @@ gates in `speckit-plan` / `speckit-tasks` / `speckit-implement` stay locked unti
 
 Also done by asking Claude in a web session — no terminal. See the "Upstream baseline (for
 upgrades)" section in `.specify/README.md`: fetch the new upstream into `.specify/upstream/vX/`,
-diff it against `upstream/v0.15.1`, re-apply the recorded deviations to the changed sections,
-and regenerate the skills.
+diff it against the current `upstream/v1.2.2`, re-apply the recorded deviations to the changed
+sections, and regenerate the skills.
+
+## Upgrading a project that was seeded earlier
+
+Seeded projects are independent copies, so after this seed is refreshed each project is
+upgraded by copying the **seed-owned** files in and leaving the **project-owned** ones alone.
+Open a Claude Code session on the project and paste (substitute your seed repo's `owner/name`):
+
+> Upgrade this repo's spec-kit install from the seed repo **`<owner>/spec-kit-seed`** (add it
+> to the session read-only). Replace these seed-owned paths with the seed's copies:
+> `.claude/skills/speckit-*/`, `.specify/scripts/bash/`, `.specify/templates/*-template.md`,
+> `.specify/README.md`, `.specify/.gitignore`, `.specify/integration.json`, and replace
+> `.specify/upstream/<old>/` with the seed's `.specify/upstream/<new>/`. If this repo has local
+> edits to any skill or to `.specify/templates/constitution-sample.md`, show me the diff and
+> ask before overwriting. Do **not** touch `.specify/memory/constitution.md` or `specs/`. In
+> `CLAUDE.md`, update only the `## Spec-Driven Development (SDD)` section from the seed's
+> `CLAUDE.snippet.md`, keeping this repo's filled-in values. If `.specify/feature.json` is
+> tracked, run `git rm --cached .specify/feature.json` (keep the local file). Run
+> `bash .specify/scripts/bash/preflight.sh`, then commit and push to the current branch.
+
+Nothing in `specs/` needs migrating. Check `.specify/README.md` ("Changes in this refresh")
+for behaviour changes to tell the team about. Other open branches that still track
+`feature.json` will show a delete/modify conflict on it when merged — keep it deleted.
 
 ---
 

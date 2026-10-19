@@ -7,9 +7,19 @@ description: Surface and resolve underspecified areas in the active feature's sp
 
 ## Preflight — run before anything else
 
-You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The active feature is resolved from `.specify/feature.json` (override with `SPECIFY_FEATURE_DIRECTORY`), never from the branch name.
+You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The feature is never inferred from the branch name.
 
-1. Run `bash .specify/scripts/bash/preflight.sh` to print the active feature, which artifacts exist, and the next valid phase.
+**Resolve the feature first.** Several sessions may work on different features in parallel, so there is no shared "active feature". Take the first rule that applies:
+
+1. The user's request names a feature (`002`, `002-report-export`, or `specs/features/002-report-export`) → the single matching `NNN-*` directory under `specs/features/`. If nothing or more than one matches, **STOP** and list the feature directories.
+2. `SPECIFY_FEATURE_DIRECTORY` is already set in the environment → use it.
+3. A local `.specify/feature.json` exists (untracked; written by speckit-specify earlier in this same session) → use its `feature_directory`.
+4. `specs/features/` holds exactly one `NNN-*` directory → use it.
+5. Otherwise **STOP**: run `bash .specify/scripts/bash/preflight.sh` (it lists every feature and its next phase) and ask the user which feature to work on.
+
+Call the result `FEATURE` (repo-relative, e.g. `specs/features/002-report-export`) and state it at the start of your reply. Run **every** `.specify/scripts/bash/` command in this skill with the feature pinned — e.g. `SPECIFY_FEATURE_DIRECTORY=<FEATURE> SPECIFY_FEATURE_NO_PERSIST=1 bash .specify/scripts/bash/check-prerequisites.sh --json` — because shell variables do not persist between commands, and the pin stops the scripts rewriting `.specify/feature.json`.
+
+1. Run `bash .specify/scripts/bash/preflight.sh <FEATURE>` to print the feature's artifacts and its next valid phase.
 2. Resolve paths: `bash .specify/scripts/bash/check-prerequisites.sh --json --paths-only`. If it fails, or `spec.md` does not exist in the feature directory, **STOP** - there is no spec to clarify. Tell the user to run the **speckit-specify** skill first.
 
 Do not proceed past this Preflight until the gate above is satisfied.
@@ -95,7 +105,7 @@ Execution steps:
 
    For each category with Partial or Missing status, add a candidate question opportunity unless:
    - Clarification would not materially change implementation or validation strategy
-   - Information is better deferred to planning phase (note internally)
+   - The item is specifically about implementation method, tech-stack comparison, or task breakdown (note internally)
 
 4. Generate (internally) a prioritized queue of candidate clarification questions (maximum 5). Do NOT output them all at once. Apply these constraints:
     - Maximum of 5 total questions across the whole session.
@@ -216,7 +226,7 @@ Report completion (after questioning loop ends or early termination):
 - Path to updated spec.
 - Sections touched (list names).
 - Spec quality checklist status (if `FEATURE_DIR/checklists/requirements.md` was re-validated): show before/after pass counts (e.g., "Spec Quality Checklist: 12/16 → 15/16 items passing") and list any items that changed state — both newly checked (unchecked → checked) and any regressions (checked → unchecked). If any items remain unchecked, list them as areas needing attention.
-- Coverage summary table listing each taxonomy category with Status: Resolved (was Partial/Missing and addressed), Deferred (exceeds question quota or better suited for planning), Clear (already sufficient), Outstanding (still Partial/Missing but low impact).
+- Coverage summary table listing each taxonomy category with Status: Resolved (was Partial/Missing and addressed), Deferred (exceeds question quota, or remaining item is specifically implementation method, tech-stack comparison, or task breakdown), Clear (already sufficient), Outstanding (still Partial/Missing but low impact).
 - If any Outstanding or Deferred remain, recommend whether to proceed to `speckit-plan` or run `speckit-clarify` again later post-plan.
 - Suggested next command.
 
