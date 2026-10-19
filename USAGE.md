@@ -18,12 +18,15 @@ for its skill by name; Claude runs the scripts, writes the artifacts, and commit
 - **Artifacts, not memory, carry state.** Everything a later phase needs is written to files:
   the constitution, then `spec.md` → `plan.md` → `tasks.md` and their companions. A new session
   picks up exactly where the files leave off.
-- **The active feature is tracked in a file,** `.specify/feature.json` — never the git branch.
-  `speckit-specify` sets it when you create a feature; the other phases read it.
+- **Name the feature in each phase prompt** — e.g. *"Use speckit-plan for feature 002"*.
+  Features are directories (`specs/features/<NNN-short-name>/`), never git branches, and there
+  is no committed "active feature" pointer, so several sessions can work on different features
+  at once. If you don't name one, the skill uses the only feature there is, or lists them and
+  asks. (`speckit-specify` tells you the new feature's number when it creates one.)
 - **Check state any time** by asking Claude to run `bash .specify/scripts/bash/preflight.sh`.
-  It prints: constitution status (`missing` / `still-template` / `filled`), the active feature,
-  which artifacts exist, and **the next valid phase**. When you're unsure what to do next, run
-  this.
+  It prints constitution status (`missing` / `still-template` / `filled`) and every feature
+  with **its next valid phase**; `preflight.sh 002` shows one feature's artifacts in detail.
+  When you're unsure what to do next, run this.
 - **Hard gates you can't skip:**
   - No `plan.md` until the constitution is *filled* (not the template) and `spec.md` has no
     unresolved `[NEEDS CLARIFICATION]` markers.
@@ -45,20 +48,16 @@ Many solo or small-team repos use a fixed set of long-lived branches — typical
 seed works unchanged in that model.** Nothing in the workflow depends on a feature branch
 existing:
 
-- **A feature is a directory, not a branch.** The active feature is
-  `specs/features/<NNN-short-name>/`, recorded in `.specify/feature.json`. Every phase reads
-  that file; none of them look at the git branch name. Several features can live side by side
-  on the same branch with no conflict — each has its own `spec.md` / `plan.md` / `tasks.md`.
+- **A feature is a directory, not a branch.** Each feature is
+  `specs/features/<NNN-short-name>/`, and you pick it by naming it in your prompt; no phase
+  looks at the git branch name. Several features can live side by side on the same branch with
+  no conflict — each has its own `spec.md` / `plan.md` / `tasks.md`.
 - **Run every SDD phase on your integration branch** (`development` in the example above).
   Check it out first (desktop) or open the session on it (web), then invoke the skill. Specs,
   plans, tasks, and code all land there as ordinary commits, and reach `main` however you
   already promote `development` → `main` (merge or PR). Don't run phases directly on `main`.
-- **Only one feature is *active* at a time** — the one `feature.json` points to. To work on a
-  different feature that already has a directory, either ask Claude to repoint
-  `.specify/feature.json` at it (e.g. *"Set the active feature to
-  `specs/features/002-report-export`"*), or set `SPECIFY_FEATURE_DIRECTORY` for that session.
-  Run preflight afterwards to confirm. Nothing about the old feature is lost; it's just no
-  longer the target of the next phase.
+- **Switching features is just naming a different one** (e.g. *"Use speckit-tasks for
+  002-report-export"*). There is nothing to repoint and nothing to commit.
 - **Keep the shared branch shippable.** Because implementation lands on the same branch other
   work uses, implement **one user story per session** (the MVP story first) and commit only
   when tests pass. `tasks.md` is organised by story so each increment is independently
@@ -66,9 +65,7 @@ existing:
 - **Hotfixes.** The spec-before-code gate still applies: a behaviour change on `hotfix` should
   update the affected feature's `spec.md` (and `plan.md`/`tasks.md` if relevant) in the same
   commit. For a fix too small to deserve a feature directory, just edit the existing spec that
-  describes the behaviour. When `hotfix` is merged back into `development`, take
-  `development`'s `.specify/feature.json` if the two ever conflict — it's the only spec-kit
-  file that can.
+  describes the behaviour.
 - **The `Feature Branch` / `Branch` lines in `spec.md` and `plan.md`** are inherited from
   upstream's templates. Without feature branches they carry the feature directory name (e.g.
   `003-user-auth`) — the scripts fall back to it as the identifier. Treat it as a label, not
@@ -160,8 +157,8 @@ artifact before moving on.
 
 ### Phase 1 — `speckit-specify`: what & why (no tech)
 
-**Produces:** `specs/features/<NNN-short-name>/spec.md`, and sets `.specify/feature.json` to
-make this the active feature.
+**Produces:** `specs/features/<NNN-short-name>/spec.md`. Claude reports the new feature's
+number (e.g. `003`) — use it in the prompts for the later phases.
 
 Start a fresh session:
 
@@ -183,7 +180,7 @@ Review the requirements and success criteria, ask for edits, then have Claude co
 If the spec has any `[NEEDS CLARIFICATION]` markers, the plan phase **will not run** until
 they're gone. In a fresh session:
 
-> Use the **speckit-clarify** skill to resolve the open questions in the spec.
+> Use the **speckit-clarify** skill to resolve the open questions in the spec for feature 003.
 
 The skill asks up to five targeted questions and writes your answers back into the spec,
 removing the markers. Commit the updated `spec.md`. (If the spec had no markers, you can skip
@@ -197,7 +194,7 @@ this phase — preflight will send you straight to `plan`.)
 
 Fresh session:
 
-> Use the **speckit-plan** skill to design the implementation. [State any tech constraints you
+> Use the **speckit-plan** skill to design the implementation of feature 003. [State any tech constraints you
 > have: language, framework, datastore, or "you choose and justify it in research.md".]
 
 This is where technology decisions get made and recorded — the stack, the data model, interface
@@ -211,7 +208,7 @@ design would violate a principle, that's surfaced here, to be resolved by changi
 
 Fresh session:
 
-> Use the **speckit-tasks** skill to break the plan into tasks.
+> Use the **speckit-tasks** skill to break feature 003's plan into tasks.
 
 You get a dependency-ordered `tasks.md`, grouped by user story, where every task has an ID, an
 exact file path, an optional `[P]` (parallelizable) marker, and a `[US#]` story label in the
@@ -246,7 +243,7 @@ Quality gates before you write code. Both are non-destructive.
 
 Fresh session:
 
-> Use the **speckit-implement** skill to build the feature from tasks.md.
+> Use the **speckit-implement** skill to build feature 003 from its tasks.md.
 
 Claude works through `tasks.md` phase by phase, following `plan.md` and honouring the
 constitution, marking each task `- [x]` as it goes. You can implement the MVP (User Story 1)
@@ -259,8 +256,8 @@ independently testable increment. Review the code, run the tests, and commit.
 
 If implementation drifted from the plan, or work remains, run this to reconcile:
 
-> Use the **speckit-converge** skill to check the code against the spec and plan and list
-> what's left.
+> Use the **speckit-converge** skill to check feature 003's code against its spec and plan
+> and list what's left.
 
 It assesses the codebase against spec/plan/tasks and **appends any remaining unbuilt work back
 to `tasks.md`**, so a follow-up `speckit-implement` session can finish it. Loop implement ↔
@@ -273,25 +270,43 @@ converge until nothing new is appended.
 | Phase | Skill | Needs first | Produces / updates |
 |-------|-------|-------------|--------------------|
 | Constitution | `speckit-constitution` | — | `.specify/memory/constitution.md` |
-| Specify | `speckit-specify` | filled constitution | `specs/features/<NNN>/spec.md` + `feature.json` |
+| Specify | `speckit-specify` | filled constitution | `specs/features/<NNN>/spec.md` |
 | Clarify | `speckit-clarify` | `spec.md` with markers | `spec.md` (markers resolved) |
 | Plan | `speckit-plan` | constitution + clean `spec.md` | `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md` |
 | Tasks | `speckit-tasks` | `plan.md` | `tasks.md` |
 | Analyze | `speckit-analyze` | spec + plan + tasks | consistency report (no file changes) |
 | Checklist | `speckit-checklist` | `plan.md` | `checklists/*.md` |
 | Implement | `speckit-implement` | constitution + plan + tasks | source code; `tasks.md` checkboxes |
-| Converge | `speckit-converge` | plan + tasks | appends remaining work to `tasks.md` |
+| Converge | `speckit-converge` | spec + plan + tasks | appends remaining work to `tasks.md` |
 
 ## Starting a second feature
 
-Just run `speckit-specify` again in a fresh session and describe the new feature. It scans
-`specs/features/` for the highest `NNN-` directory, increments the number, creates the new
-feature directory, and repoints `.specify/feature.json` at it. Each feature keeps its own spec,
-plan, and tasks side by side.
+Just run `speckit-specify` again in a fresh session and describe the new feature. It pulls the
+current branch, scans `specs/features/` for the highest `NNN-` directory, increments the
+number, and creates the new feature directory. Each feature keeps its own spec, plan, and tasks
+side by side; from then on, name the feature you mean in each prompt.
+
+## Several features in parallel (multiple sessions or agents)
+
+Different features can be worked on at the same time — in separate Claude sessions, on the
+same branch or on separate branches:
+
+- **Name the feature in every prompt.** Each session works only on the feature it was given;
+  the skills pin it on every script call (`SPECIFY_FEATURE_DIRECTORY` +
+  `SPECIFY_FEATURE_NO_PERSIST`), so nothing shared is rewritten.
+- **`.specify/feature.json` is local only** (git-ignored, as in upstream spec-kit). It never
+  travels between sessions, so it can't conflict.
+- **Feature numbers.** `speckit-specify` pulls before numbering, but two sessions creating
+  features at the same moment on different branches can still both pick, say, `004`. When the
+  second one merges, rename its directory to the next free number (ask Claude to do it).
+- **One session per feature.** Two sessions on the *same* feature at once will both edit its
+  `spec.md` / `tasks.md` and conflict — finish or merge one first.
+- Code-level conflicts between features are ordinary merge conflicts; keep features that touch
+  the same files in sequence rather than in parallel.
 
 ## When in doubt
 
-Run preflight — it always tells you the constitution status, the active feature, and the next
-valid phase:
+Run preflight — it always tells you the constitution status, every feature, and each one's
+next valid phase:
 
 > Run `bash .specify/scripts/bash/preflight.sh`.

@@ -363,8 +363,8 @@ numbers; do not replace them with aspirational language.
   or by amending this file, never by ignoring the principle.
 - **Branches**: [BRANCH_MODEL]. Sessions work on the current branch only and
   never create or switch branches. `main` is protected; changes land by pull
-  request with CI green. The active feature resolves from
-  `.specify/feature.json`, never from a branch name.
+  request with CI green. Each session names the feature it works on
+  (`specs/features/<NNN-…>/`); the feature never resolves from a branch name.
 - **Tasks**: every task in `tasks.md` carries an ID, an optional `[P]`
   parallel marker, a `[US#]` story label, an exact file path, and, in
   multi-deployable repos, a deployable tag so a session installs one toolchain

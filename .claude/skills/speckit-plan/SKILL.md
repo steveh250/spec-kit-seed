@@ -7,9 +7,19 @@ description: Produce the technical implementation plan for the active feature - 
 
 ## Preflight — run before anything else
 
-You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The active feature is resolved from `.specify/feature.json` (override with `SPECIFY_FEATURE_DIRECTORY`), never from the branch name.
+You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The feature is never inferred from the branch name.
 
-1. Run `bash .specify/scripts/bash/preflight.sh` to print the active feature, which artifacts exist, and the next valid phase.
+**Resolve the feature first.** Several sessions may work on different features in parallel, so there is no shared "active feature". Take the first rule that applies:
+
+1. The user's request names a feature (`002`, `002-report-export`, or `specs/features/002-report-export`) → the single matching `NNN-*` directory under `specs/features/`. If nothing or more than one matches, **STOP** and list the feature directories.
+2. `SPECIFY_FEATURE_DIRECTORY` is already set in the environment → use it.
+3. A local `.specify/feature.json` exists (untracked; written by speckit-specify earlier in this same session) → use its `feature_directory`.
+4. `specs/features/` holds exactly one `NNN-*` directory → use it.
+5. Otherwise **STOP**: run `bash .specify/scripts/bash/preflight.sh` (it lists every feature and its next phase) and ask the user which feature to work on.
+
+Call the result `FEATURE` (repo-relative, e.g. `specs/features/002-report-export`) and state it at the start of your reply. Run **every** `.specify/scripts/bash/` command in this skill with the feature pinned — e.g. `SPECIFY_FEATURE_DIRECTORY=<FEATURE> SPECIFY_FEATURE_NO_PERSIST=1 bash .specify/scripts/bash/check-prerequisites.sh --json` — because shell variables do not persist between commands, and the pin stops the scripts rewriting `.specify/feature.json`.
+
+1. Run `bash .specify/scripts/bash/preflight.sh <FEATURE>` to print the feature's artifacts and its next valid phase.
 2. Resolve paths: `bash .specify/scripts/bash/check-prerequisites.sh --json --paths-only`. If `spec.md` does not exist, **STOP** and tell the user to run the **speckit-specify** skill first.
 3. Open `spec.md` and search for `[NEEDS CLARIFICATION`. If any marker remains, **STOP** - do not plan against an ambiguous spec. Tell the user to run the **speckit-clarify** skill (or resolve the markers) first.
 4. If `plan.md` does not yet exist in the feature directory, seed it: `cp .specify/templates/plan-template.md <FEATURE_DIR>/plan.md` (never overwrite an existing plan.md).
@@ -29,7 +39,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-1. **Setup**: Run `bash .specify/scripts/bash/check-prerequisites.sh --json --paths-only` from repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, SPECS_DIR, BRANCH. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+1. **Setup**: Run `bash .specify/scripts/bash/check-prerequisites.sh --json --paths-only` from repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, FEATURE_DIR, BRANCH. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
 
 2. **Load context**: Read FEATURE_SPEC and `.specify/memory/constitution.md`. Load IMPL_PLAN template (already copied).
 

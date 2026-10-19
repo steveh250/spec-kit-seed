@@ -47,8 +47,9 @@ deviations: `.specify/README.md`.
 9. `speckit-converge` → appends any unbuilt work back to `tasks.md`
 
 Invoke a phase with its skill (e.g. "Use the speckit-plan skill…"). Each skill opens with
-a Preflight that resolves the active feature and **hard-stops** if its prerequisite artifact
-is missing.
+a Preflight that resolves the feature and **hard-stops** if its prerequisite artifact
+is missing. Name the feature in the request (e.g. "speckit-plan for feature 002"); with
+none named, the skill uses the only feature, or lists them and asks.
 
 **Task tagging:** every task in `tasks.md` carries a Task ID, an optional `[P]`
 (parallelizable) marker, a `[US#]` story label in user-story phases, and an exact file path.
@@ -58,13 +59,17 @@ is missing.
      contiguous blocks within each phase. List the tags and each one's test command here.
      Single-deployable repos: delete this note — no deploy tag is used. -->
 
-**Where artifacts live / how the active feature resolves:**
+**Where artifacts live / how the feature resolves:**
 - Feature artifacts: `specs/features/<NNN-short-name>/` (spec.md, plan.md, tasks.md, …).
 - Templates: `.specify/templates/`. Constitution: `.specify/memory/constitution.md`.
 - Scripts: `.specify/scripts/bash/` — run `bash .specify/scripts/bash/preflight.sh` to see
-  the active feature, existing artifacts, and the next valid phase.
-- The active feature resolves from `.specify/feature.json` (`feature_directory` key),
-  overridable with the `SPECIFY_FEATURE_DIRECTORY` env var. **Never** from the git branch name.
+  every feature and its next valid phase (`preflight.sh 002` for one feature in detail).
+- The feature resolves from the request (`002`, `002-short-name`, or its path), then
+  `SPECIFY_FEATURE_DIRECTORY`, then a local `.specify/feature.json`, then "the only feature
+  in `specs/features/`". **Never** from the git branch name. `.specify/feature.json` is
+  git-ignored session state — never commit it. Scripts run with
+  `SPECIFY_FEATURE_DIRECTORY=<dir> SPECIFY_FEATURE_NO_PERSIST=1` so parallel sessions on
+  different features never collide.
 
 **Hard gates (do not bypass):**
 - No implementation code without both `plan.md` and `tasks.md` for the feature.
@@ -84,7 +89,7 @@ is missing.
        e.g. "long-lived development / hotfix / main only; all SDD phases (specs, plans,
        tasks, code) run on development, which is promoted to main; hotfix carries urgent
        fixes and is merged back into development. No per-feature branches are ever
-       created." Features are identified by specs/features/<NNN-short-name>/ and
-       .specify/feature.json, never by a branch, so either model works unchanged. -->
+       created." Features are identified by specs/features/<NNN-short-name>/,
+       never by a branch, so either model works unchanged. -->
 - Commit artifacts as they are produced (spec, plan, tasks, code).
 - One phase per session; hand off to the next phase in a fresh session.

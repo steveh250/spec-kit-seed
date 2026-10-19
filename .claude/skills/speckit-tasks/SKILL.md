@@ -7,9 +7,19 @@ description: Break the active feature's plan.md into an actionable, dependency-o
 
 ## Preflight — run before anything else
 
-You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The active feature is resolved from `.specify/feature.json` (override with `SPECIFY_FEATURE_DIRECTORY`), never from the branch name.
+You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The feature is never inferred from the branch name.
 
-1. Run `bash .specify/scripts/bash/preflight.sh` to print the active feature, which artifacts exist, and the next valid phase.
+**Resolve the feature first.** Several sessions may work on different features in parallel, so there is no shared "active feature". Take the first rule that applies:
+
+1. The user's request names a feature (`002`, `002-report-export`, or `specs/features/002-report-export`) → the single matching `NNN-*` directory under `specs/features/`. If nothing or more than one matches, **STOP** and list the feature directories.
+2. `SPECIFY_FEATURE_DIRECTORY` is already set in the environment → use it.
+3. A local `.specify/feature.json` exists (untracked; written by speckit-specify earlier in this same session) → use its `feature_directory`.
+4. `specs/features/` holds exactly one `NNN-*` directory → use it.
+5. Otherwise **STOP**: run `bash .specify/scripts/bash/preflight.sh` (it lists every feature and its next phase) and ask the user which feature to work on.
+
+Call the result `FEATURE` (repo-relative, e.g. `specs/features/002-report-export`) and state it at the start of your reply. Run **every** `.specify/scripts/bash/` command in this skill with the feature pinned — e.g. `SPECIFY_FEATURE_DIRECTORY=<FEATURE> SPECIFY_FEATURE_NO_PERSIST=1 bash .specify/scripts/bash/check-prerequisites.sh --json` — because shell variables do not persist between commands, and the pin stops the scripts rewriting `.specify/feature.json`.
+
+1. Run `bash .specify/scripts/bash/preflight.sh <FEATURE>` to print the feature's artifacts and its next valid phase.
 2. Gate on the plan: `bash .specify/scripts/bash/check-prerequisites.sh --json`. If it exits non-zero or prints an ERROR about a missing `plan.md`, **STOP** and tell the user to run the **speckit-plan** skill first.
 3. If `tasks.md` does not yet exist in the feature directory, seed it: `cp .specify/templates/tasks-template.md <FEATURE_DIR>/tasks.md` (never overwrite an existing tasks.md).
 4. **Constitution gate:** if `.specify/memory/constitution.md` is missing, or `grep -qE '\[[A-Z][A-Z0-9_]+\]|<!-- Example:|TODO' .specify/memory/constitution.md` matches — meaning it still holds bracketed template placeholders, the template's `<!-- Example: -->` guidance, or `TODO` markers — **STOP** with: "The constitution is still a template — run speckit-constitution first."
@@ -170,6 +180,7 @@ If you enable deployable tags, add the matching tag legend/table to the target r
    - Map each entity to the user story(ies) that need it
    - If entity serves multiple stories: Put in earliest story or Setup phase
    - Relationships → service layer tasks in appropriate story phase
+   - For each field with constraints in data-model.md (max length, nullable/required, enum values, validation rules), quote the constraint verbatim in the task description so it is not left to implementation-time discretion
 
 4. **From Setup/Infrastructure**:
    - Shared infrastructure → Setup phase (Phase 1)

@@ -7,10 +7,20 @@ description: Run a non-destructive cross-artifact consistency and quality analys
 
 ## Preflight — run before anything else
 
-You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The active feature is resolved from `.specify/feature.json` (override with `SPECIFY_FEATURE_DIRECTORY`), never from the branch name.
+You are in a **Claude Code cloud session**: all work stays on the **current git branch**. Never run `git checkout -b`, `git switch -c`, or `git branch`. The feature is never inferred from the branch name.
 
-1. Run `bash .specify/scripts/bash/preflight.sh` to print the active feature, which artifacts exist, and the next valid phase.
-2. Gate on all three artifacts: `bash .specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks`. If it exits non-zero or prints an ERROR, **STOP** and run the named prerequisite skill (**speckit-specify** for a missing spec, **speckit-plan** for a missing plan, **speckit-tasks** for missing tasks). Do not produce partial analysis.
+**Resolve the feature first.** Several sessions may work on different features in parallel, so there is no shared "active feature". Take the first rule that applies:
+
+1. The user's request names a feature (`002`, `002-report-export`, or `specs/features/002-report-export`) → the single matching `NNN-*` directory under `specs/features/`. If nothing or more than one matches, **STOP** and list the feature directories.
+2. `SPECIFY_FEATURE_DIRECTORY` is already set in the environment → use it.
+3. A local `.specify/feature.json` exists (untracked; written by speckit-specify earlier in this same session) → use its `feature_directory`.
+4. `specs/features/` holds exactly one `NNN-*` directory → use it.
+5. Otherwise **STOP**: run `bash .specify/scripts/bash/preflight.sh` (it lists every feature and its next phase) and ask the user which feature to work on.
+
+Call the result `FEATURE` (repo-relative, e.g. `specs/features/002-report-export`) and state it at the start of your reply. Run **every** `.specify/scripts/bash/` command in this skill with the feature pinned — e.g. `SPECIFY_FEATURE_DIRECTORY=<FEATURE> SPECIFY_FEATURE_NO_PERSIST=1 bash .specify/scripts/bash/check-prerequisites.sh --json` — because shell variables do not persist between commands, and the pin stops the scripts rewriting `.specify/feature.json`.
+
+1. Run `bash .specify/scripts/bash/preflight.sh <FEATURE>` to print the feature's artifacts and its next valid phase.
+2. Gate on all three artifacts: `bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks`. If it exits non-zero or prints an ERROR, **STOP** and run the named prerequisite skill (**speckit-specify** for a missing spec, **speckit-plan** for a missing plan, **speckit-tasks** for missing tasks). Do not produce partial analysis.
 
 Do not proceed past this Preflight until the gate above is satisfied.
 
@@ -38,7 +48,7 @@ Identify inconsistencies, duplications, ambiguities, and underspecified items ac
 
 ### 1. Initialize Analysis Context
 
-Run `bash .specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks` once from repo root and parse JSON for FEATURE_DIR and AVAILABLE_DOCS. Derive absolute paths:
+Run `bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks` once from repo root and parse JSON for FEATURE_DIR and AVAILABLE_DOCS. Derive absolute paths:
 
 - SPEC = FEATURE_DIR/spec.md
 - PLAN = FEATURE_DIR/plan.md

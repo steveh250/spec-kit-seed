@@ -23,8 +23,10 @@ the web — no terminal required**.
 
 Single-deployable by default; multi-deployable (monorepo) task tagging is an opt-in.
 
-Branch-model agnostic: features are identified by `specs/features/<NNN-…>/` and
-`.specify/feature.json`, never by a git branch, so it works with per-feature branches **or**
+Branch-model agnostic: features are directories (`specs/features/<NNN-…>/`) that you pick by
+naming them in each request — never by a git branch, and with no committed "active feature"
+pointer, so separate sessions can work on different features in parallel. It works with
+per-feature branches **or**
 with a fixed `development` / `hotfix` / `main` layout that has no feature branches at all (see
 ["Working without feature branches"](USAGE.md#working-without-feature-branches-eg-development--hotfix--main)
 in `USAGE.md`). Works from Claude Code on the web or the desktop client.
@@ -86,6 +88,6 @@ Licensed under the [MIT License](LICENSE).
 * Move the default branch from main to, say, development (also helps protect development from deletion)
 
 Built on [github/spec-kit](https://github.com/github/spec-kit) (MIT, © GitHub, Inc.), pinned
-to release **v0.15.1** and adapted into Claude Code skills for cloud sessions. The upstream
+to release **v1.2.2** and adapted into Claude Code skills for cloud sessions. The upstream
 copyright is preserved in [`LICENSE`](LICENSE); what was taken verbatim vs. adapted, and why,
 is documented in [`.specify/README.md`](.specify/README.md).

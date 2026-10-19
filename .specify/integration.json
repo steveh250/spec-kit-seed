@@ -1,0 +1,6 @@
+{
+  "integration": "claude",
+  "integration_settings": {
+    "claude": { "invoke_separator": "-" }
+  }
+}
