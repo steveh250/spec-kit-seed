@@ -1,6 +1,6 @@
 ---
 name: speckit-specify
-description: Write or update the feature specification (spec.md) for a capability from a natural-language description: user scenarios, functional requirements, and measurable success criteria, with no implementation detail. Use when asked to 'write/create the spec for X', 'specify X', or to start a new feature. Creates the feature directory under specs/features/ and .specify/feature.json.
+description: Write or update the feature specification (spec.md) for a capability from a natural-language description: user scenarios, functional requirements, and measurable success criteria, with no implementation detail. Use when asked to 'write/create the spec for X', 'specify X', or to start a new feature. Creates the numbered feature directory under specs/features/.
 ---
 
 # Spec Kit — Specify phase
@@ -11,7 +11,7 @@ You are in a **Claude Code cloud session**: all work stays on the **current git 
 
 1. Run `bash .specify/scripts/bash/preflight.sh` to print the constitution status and every feature with its next valid phase.
 2. This phase **creates** a feature; it does not require an existing one, and it never switches or overwrites another feature. If the user's request names an **existing** feature directory (to revise its spec), work on that one instead of allocating a new number.
-3. Before numbering, make sure you see features other sessions have already pushed: `git fetch origin <current-branch>` and, if the remote is ahead, `git pull --ff-only origin <current-branch>` (skip silently if there is no remote or the pull is not fast-forward; just note it in your report).
+3. Before numbering, make sure you see features other sessions have already pushed: `git fetch origin` (all branches, so numbers taken on other branches are visible too) and, if the current branch's remote is ahead, `git pull --ff-only origin <current-branch>` (skip silently if there is no remote or the pull is not fast-forward; just note it in your report).
 
 Do not proceed past this Preflight until the gate above is satisfied.
 
@@ -60,9 +60,18 @@ Given that feature description, do this:
    2. Otherwise, auto-generate it under `specs/features/` using the numbering rule below.
 
    **Numbering rule (sequential, explicit — no judgement calls):**
-   - List the entries of `specs/features/`. Consider only directories whose names match the
-     regex `^[0-9]{3}-` (three digits, then a hyphen). **Ignore everything else** — files,
-     nested `features` itself, and any pre-existing or non-conformant directory names.
+   - List the entries of `specs/features/` in the working tree **and** on every local and
+     fetched remote branch (local branches include those of sibling `git worktree`s), so a
+     number another branch already took is never reused:
+     ```bash
+     { ls specs/features 2>/dev/null
+       git for-each-ref --format='%(refname)' refs/heads/ refs/remotes/ | while read -r ref; do
+         git ls-tree --name-only "$ref" specs/features/ 2>/dev/null | sed 's#.*/##'
+       done; } | grep -E '^[0-9]{3}-' | sort -u
+     ```
+     Consider only names that match the regex `^[0-9]{3}-` (three digits, then a hyphen).
+     **Ignore everything else** — files, nested `features` itself, and any pre-existing or
+     non-conformant directory names.
    - If one or more match: take the numeric prefix of each, find the **highest**, add 1, and
      zero-pad the result to three digits (e.g. highest `007` → next `008`).
    - If none match (including when `specs/features/` does not exist yet): start at `001`.
@@ -76,23 +85,19 @@ Given that feature description, do this:
    - Use the template at `.specify/templates/spec-template.md`
    - Copy the `spec-template` file to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
    - Set `SPEC_FILE` to `SPECIFY_FEATURE_DIRECTORY/spec.md`
-   - Record the resolved path in `.specify/feature.json` as a **local, untracked** convenience
-     for the rest of this session (the file is git-ignored — never `git add -f` it):
-     ```json
-     {
-       "feature_directory": "<resolved feature dir>"
-     }
-     ```
-     Write the actual resolved directory path value (for example, `specs/features/003-user-auth`),
-     not the literal string `SPECIFY_FEATURE_DIRECTORY`. Later sessions do **not** see this file:
-     downstream skills (`speckit-plan`, `speckit-tasks`, etc.) locate the feature from the user
-     naming it (e.g. "speckit-plan for 003"), or automatically when it is the only feature —
-     never from a git branch name. Tell the user the feature id in your completion report.
+   - Do **not** write `.specify/feature.json` (this seed deviates from upstream here). In a
+     checkout shared by several agents a pointer file would hand your feature to every other
+     agent that doesn't name one. Pin `SPECIFY_FEATURE_DIRECTORY=<dir> SPECIFY_FEATURE_NO_PERSIST=1`
+     on any `.specify/scripts/bash/` call you make. Downstream skills (`speckit-plan`,
+     `speckit-tasks`, etc.) locate the feature from the user naming it (e.g. "speckit-plan for
+     003"), or automatically when it is the only feature — never from a git branch name. Tell
+     the user the feature id in your completion report.
 
    **IMPORTANT**:
    - You must only create one feature per `speckit-specify` invocation
-   - The feature is identified by its directory (`specs/features/<NNN>-<short-name>`), never by a git branch name or a committed pointer file
-   - If two sessions on different branches both allocate the same number, the one merged second renames its directory to the next free number after the merge (never renumber the one already merged)
+   - The feature is identified by its directory (`specs/features/<NNN>-<short-name>`), never by a git branch name or a pointer file
+   - **Re-check the number before every commit and push of the new feature.** Run `git fetch origin` and the scan above again. If another feature now holds your number, your directory is not yet pushed anywhere, so rename it (`mv`, or `git mv` once committed) to the next free number and update the old number wherever it appears inside the directory (e.g. the spec's `Feature Branch` line, links in `checklists/requirements.md`) before committing. If a push is rejected because the remote moved, pull, repeat this check, then push again.
+   - If two sessions on different branches still both end up with the same number, the one merged second renames its directory to the next free number after the merge (never renumber the one already merged). `preflight.sh` flags duplicate numbers.
    - The spec directory and file are always created by this skill
 
 4. Load the resolved active `spec-template` file to understand required sections.

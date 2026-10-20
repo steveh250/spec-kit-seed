@@ -119,13 +119,16 @@ The skill will:
 ### 3. Review what it wrote
 
 Claude fills the template and prepends a **Sync Impact Report** (version change, which
-principles were added/modified, any deferred TODOs). Read the principles back — they govern
-every future spec, plan, and task, so it's worth getting them right now. Ask for edits in the
-same session until they read the way you want.
+principles were added/modified, any deferred TODOs) for you to review. Read the principles
+back — they govern every future spec, plan, and task, so it's worth getting them right now.
+Ask for edits in the same session until they read the way you want. The report is temporary.
+Before committing, Claude moves anything durable (deferred setup items, `TODO`s) into the
+constitution body, deletes the report from the file, and uses it as the commit message body.
 
 ### 4. Commit and verify
 
-Ask Claude to commit (it suggests a message like `docs: ratify constitution v1.0.0`) and push.
+Ask Claude to commit (it suggests a message like `docs: ratify constitution v1.0.0`, with the
+Sync Impact Report as its body) and push.
 Then confirm the gate is open:
 
 > Run the preflight script.
@@ -135,8 +138,10 @@ has bracketed `[PLACEHOLDERS]`, the template's `<!-- Example: -->` comments, or 
 ask Claude to resolve them. Once it's `filled`, you're ready to build features.
 
 > **Amending later:** to change principles down the road, start a new session and invoke
-> `speckit-constitution` again — it versions the change (MAJOR/MINOR/PATCH) and updates the
-> Sync Impact Report. Principles are only ever changed deliberately, never quietly worked around.
+> `speckit-constitution` again — it versions the change (MAJOR/MINOR/PATCH) and drafts a fresh
+> Sync Impact Report for review, which again ends up in the commit message rather than the file.
+> Amend on the integration branch from one session at a time: the constitution is a single file
+> every feature reads. Principles are only ever changed deliberately, never quietly worked around.
 
 ---
 
@@ -281,9 +286,9 @@ converge until nothing new is appended.
 
 ## Starting a second feature
 
-Just run `speckit-specify` again in a fresh session and describe the new feature. It pulls the
-current branch, scans `specs/features/` for the highest `NNN-` directory, increments the
-number, and creates the new feature directory. Each feature keeps its own spec, plan, and tasks
+Just run `speckit-specify` again in a fresh session and describe the new feature. It fetches
+every remote branch, finds the highest `NNN-` feature directory on any of them (and in the
+working tree), increments the number, and creates the new feature directory. Each feature keeps its own spec, plan, and tasks
 side by side; from then on, name the feature you mean in each prompt.
 
 ## Several features in parallel (multiple sessions or agents)
@@ -293,14 +298,31 @@ same branch or on separate branches:
 
 - **Name the feature in every prompt.** Each session works only on the feature it was given;
   the skills pin it on every script call (`SPECIFY_FEATURE_DIRECTORY` +
-  `SPECIFY_FEATURE_NO_PERSIST`), so nothing shared is rewritten.
-- **`.specify/feature.json` is local only** (git-ignored, as in upstream spec-kit). It never
-  travels between sessions, so it can't conflict.
-- **Feature numbers.** `speckit-specify` pulls before numbering, but two sessions creating
-  features at the same moment on different branches can still both pick, say, `004`. When the
-  second one merges, rename its directory to the next free number (ask Claude to do it).
+  `SPECIFY_FEATURE_NO_PERSIST`), so nothing shared is rewritten. There is no "active feature"
+  pointer: the skills never write or read `.specify/feature.json`. If preflight reports one,
+  it is a leftover and can be deleted.
+- **Feature numbers.** `speckit-specify` numbers above the highest feature on *any* remote
+  branch and re-checks just before it commits and pushes. Two sessions that both allocate
+  before either pushes can still pick, say, `004`. `preflight.sh` then warns about the
+  duplicate. Rename the directory merged second to the next free number (ask Claude to do
+  it). To rule collisions out entirely, run `speckit-specify` sessions one at a time; only the
+  later phases need to run in parallel.
 - **One session per feature.** Two sessions on the *same* feature at once will both edit its
-  `spec.md` / `tasks.md` and conflict — finish or merge one first.
+  `spec.md` / `tasks.md` and conflict — finish or merge one first. `[P]` markers in
+  `tasks.md` mean tasks can be done in either order, not that two agents can share a feature.
+- **Serialize the shared files.** `.specify/memory/constitution.md` and `CLAUDE.md` are
+  global. Make constitution amendments, and any `CLAUDE.md` edit (e.g. `speckit-tasks`
+  documenting `[deploy]` tags), from one session at a time on the integration branch.
+- **Cloud sessions** are separate clones, so nothing on disk is shared. Sessions on the same
+  branch just need to pull when a push is rejected.
+- **Local agents (desktop or CLI) need one `git worktree` each — never one shared checkout.**
+  In a shared checkout one agent's `git pull` (which `speckit-specify` runs) rewrites files
+  under the others mid-edit, and their commits interleave. Git won't check the same branch
+  out in two worktrees. So in a repo without feature branches, give each agent its own
+  short-lived branch off the integration branch before starting its session, and merge it
+  back when the phase is done (e.g. `git worktree add ../app-004 -b agent/004 development`).
+  The skills themselves never create or switch branches. If your constitution or `CLAUDE.md`
+  branch model forbids such branches, run parallel agents as cloud sessions instead.
 - Code-level conflicts between features are ordinary merge conflicts; keep features that touch
   the same files in sequence rather than in parallel.
 
