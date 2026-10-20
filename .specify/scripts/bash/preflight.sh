@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # preflight.sh — report constitution status, the Spec Kit features in this repo, and the
 # next valid phase for each. Read-only and non-destructive: it never creates git branches,
-# never writes .specify/feature.json, and exits 0 unless a named feature cannot be found.
+# never reads or writes .specify/feature.json, and exits 0 unless a named feature cannot be
+# found.
 #
 # Usage:
 #   preflight.sh            list every feature under specs/features/ (detail if only one)
 #   preflight.sh <feature>  detail for one feature: "002", "002-report-export", or a path
 #
-# With no argument, a feature pinned by SPECIFY_FEATURE_DIRECTORY or a local (untracked)
-# .specify/feature.json is shown in detail. The feature is never resolved from the git
-# branch name. Cloud sessions stay on the current branch.
+# With no argument, a feature pinned by SPECIFY_FEATURE_DIRECTORY is shown in detail. A
+# leftover .specify/feature.json is reported, never followed. Feature numbers used by more
+# than one directory are flagged. The feature is never resolved from the git branch name.
+# Cloud sessions stay on the current branch.
 
 set -euo pipefail
 
@@ -108,6 +110,34 @@ show_all() {
     for line in "${features[@]}"; do
         printf '  %-40s -> %s\n' "$(basename "$line")" "$(next_phase "$line")"
     done
+    warn_duplicates "${features[@]}"
+}
+
+# Flag feature numbers held by more than one directory (two sessions allocated the same
+# number on different branches). The one merged second must be renamed to the next free
+# number; until then "speckit-<phase> for NNN" is ambiguous and the skills stop.
+warn_duplicates() {
+    local dups
+    dups=$(for line in "$@"; do basename "$line" | cut -c1-3; done | sort | uniq -d)
+    [ -n "$dups" ] || return 0
+    echo
+    local n
+    for n in $dups; do
+        echo "WARNING: feature number $n is used by more than one directory:"
+        for line in "$@"; do
+            case "$(basename "$line")" in "$n"-*) echo "    $(basename "$line")" ;; esac
+        done
+    done
+    echo "  Rename the one merged second to the next free number (never the one merged first)."
+}
+
+# A leftover pointer from before the seed stopped using it. Nothing reads it any more, but
+# upstream's scripts still fall back to it when run by hand without SPECIFY_FEATURE_DIRECTORY.
+note_stale_pointer() {
+    [ -f "$REPO_ROOT/.specify/feature.json" ] || return 0
+    echo "Note: .specify/feature.json exists but is not used to pick a feature (stale"
+    echo "      pointer, or another agent's in a shared checkout). Safe to delete."
+    echo
 }
 
 echo "Spec Kit preflight"
@@ -115,6 +145,7 @@ echo "=================="
 echo "Repo root: $REPO_ROOT"
 echo "Constitution: $(constitution_status)  (.specify/memory/constitution.md)"
 echo
+note_stale_pointer
 
 if [ $# -gt 0 ] && [ -n "$1" ]; then
     want="${1%/}"
@@ -137,8 +168,9 @@ if [ $# -gt 0 ] && [ -n "$1" ]; then
         exit 1
     fi
     show_feature "${matches[0]}"
-elif paths_output="$(get_feature_paths --no-persist 2>/dev/null)"; then
-    # Pinned by SPECIFY_FEATURE_DIRECTORY or a local .specify/feature.json.
+elif [ -n "${SPECIFY_FEATURE_DIRECTORY:-}" ] \
+    && paths_output="$(SPECIFY_FEATURE_NO_PERSIST=1 get_feature_paths --no-persist 2>/dev/null)"; then
+    # Pinned by SPECIFY_FEATURE_DIRECTORY (never by a local .specify/feature.json).
     eval "$paths_output"
     show_feature "${FEATURE_DIR%/}"
 else

@@ -65,11 +65,14 @@ none named, the skill uses the only feature, or lists them and asks.
 - Scripts: `.specify/scripts/bash/` — run `bash .specify/scripts/bash/preflight.sh` to see
   every feature and its next valid phase (`preflight.sh 002` for one feature in detail).
 - The feature resolves from the request (`002`, `002-short-name`, or its path), then
-  `SPECIFY_FEATURE_DIRECTORY`, then a local `.specify/feature.json`, then "the only feature
-  in `specs/features/`". **Never** from the git branch name. `.specify/feature.json` is
-  git-ignored session state — never commit it. Scripts run with
+  `SPECIFY_FEATURE_DIRECTORY`, then the feature this conversation already created, then "the
+  only feature in `specs/features/`". **Never** from the git branch name, and never from
+  `.specify/feature.json`. The skills don't use that file; if one exists it is a stale,
+  git-ignored leftover, so never commit it. Scripts run with
   `SPECIFY_FEATURE_DIRECTORY=<dir> SPECIFY_FEATURE_NO_PERSIST=1` so parallel sessions on
   different features never collide.
+- The constitution's Sync Impact Report is review material only: it goes in the amendment's
+  commit message, never in the committed `.specify/memory/constitution.md`.
 
 **Hard gates (do not bypass):**
 - No implementation code without both `plan.md` and `tasks.md` for the feature.

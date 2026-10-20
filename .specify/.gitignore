@@ -1,4 +1,5 @@
 # Machine-local Spec Kit state (mirrors upstream spec-kit's managed .specify/.gitignore).
-# feature.json is a per-session pointer to the feature being worked on; it is never
-# committed, so parallel sessions on different features cannot collide on it.
+# The seed's skills never write or read feature.json (each request names its feature), but
+# upstream's scripts still write it when run by hand without SPECIFY_FEATURE_NO_PERSIST, and
+# older installs tracked it. Ignored so such a file can never be committed.
 feature.json

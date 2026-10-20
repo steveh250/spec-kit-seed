@@ -16,39 +16,6 @@
   Or simply invoke the speckit-constitution skill: it reads this file as the
   baseline and asks only about what differs for the project.
 -->
-<!--
-Sync Impact Report
-==================
-Version change: (sample) → 1.0.0
-Rationale: Initial ratification for [PROJECT_NAME], adopted from the owner's
-cross-project constitution sample with project-specific values filled in.
-
-Principles defined (10):
-  I.    Specification Before Code
-  II.   Documentation Is a Build Artifact
-  III.  Hard Boundaries Between Tiers
-  IV.   Stateless Services, External State
-  V.    Security and Untrusted Input by Default
-  VI.   Tests Accompany Every Behaviour Change
-  VII.  Consistent, Linted, Typed Code
-  VIII. Configuration Over Hardcoding; Degrade Gracefully
-  IX.   Observability and Auditable Provenance
-  X.    Simplicity and Honest Scope
-
-Sections:
-  Added → "Technology Constraints"
-  Added → "Database Change Policy (Expand, Migrate, Contract)"
-  Added → "Quality Targets (ISO 25010)"
-  Added → "Development Workflow"
-  Added → "Governance"
-
-Runtime consumers to keep in sync:
-  - CLAUDE.md (SDD phase order, hard gates, build/test/lint commands)
-  - .specify/templates/plan-template.md (Constitution Check reads this file)
-
-Deferred setup (tracked as follow-up work, not an open governance question):
-  - [DEFERRED_SETUP_ITEMS]
--->
 
 # [PROJECT_NAME] Constitution
 
@@ -227,8 +194,7 @@ One style per language, enforced by tooling, as part of the definition of done:
 - CI MUST run lint → type-check → test → build as blocking gates on every pull
   request. Nothing merges red.
 - If a mandated tool is not yet configured, the constitution says so explicitly
-  under *Deferred setup* in the Sync Impact Report; the absence is never blessed
-  by silence.
+  under *Deferred Setup* below; the absence is never blessed by silence.
 
 Rationale: consistent style removes review noise and makes diffs about
 behaviour. Naming deferred tooling keeps the principle honest until it is
@@ -377,6 +343,14 @@ numbers; do not replace them with aspirational language.
 - **Conflicts**: if an instruction conflicts with this constitution or the
   build contract, flag the conflict before proceeding.
 
+## Deferred Setup
+
+Tooling or infrastructure a principle mandates that is not configured yet,
+tracked as follow-up work rather than an open governance question. Write "None"
+when nothing is deferred; remove an item when its setup lands.
+
+- [DEFERRED_SETUP_ITEMS]
+
 ## Governance
 
 This constitution supersedes ad-hoc practice and any conflicting guidance in
@@ -384,8 +358,10 @@ This constitution supersedes ad-hoc practice and any conflicting guidance in
 MUST be resolved by changing the spec / plan / task or by amending this file,
 never by silently ignoring the principle.
 
-Amendments are made by editing this file with an updated Sync Impact Report, a
-semantic version bump, and the amendment date:
+Amendments are made by editing this file with a semantic version bump and the
+amendment date. The Sync Impact Report drafted for reviewing an amendment is
+temporary: it goes in the commit message, not in this file, and anything durable
+it lists (deferred setup, values still to be decided) is recorded in the body first:
 
 - **MAJOR**: a principle is removed or redefined in a backward-incompatible way.
 - **MINOR**: a principle or section is added, or guidance materially expanded.

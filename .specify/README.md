@@ -26,9 +26,11 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
 
 - `.specify/scripts/bash/preflight.sh` — prints constitution status and every feature under
   `specs/features/` with its next valid phase (`preflight.sh <feature>` for one feature's
-  artifacts); read-only, never writes `feature.json`, never touches git.
+  artifacts); read-only, never reads or writes `feature.json`, never touches git. It flags
+  feature numbers used by two directories and a leftover `feature.json`.
 - `.specify/.gitignore` — ignores `feature.json`, mirroring the managed `.specify/.gitignore`
-  upstream's `specify init` writes (upstream treats the pointer as machine-local state).
+  upstream's `specify init` writes, so a pointer written by a hand-run script or left over from
+  an older install can never be committed.
 - `.specify/integration.json` — a minimal stand-in for the file `specify init` writes; it only
   sets `invoke_separator: "-"` so script error messages name skills as `/speckit-plan` rather
   than upstream's default `/speckit.plan`.
@@ -107,18 +109,35 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
     describes two or more deployables. (An earlier monorepo install hardcoded per-deployable
     tags; the seed generalizes that to opt-in.)
 
-11. **The feature is named per request; `feature.json` is never committed.** Upstream keeps
+11. **The feature is named per request; there is no `feature.json` pointer.** Upstream keeps
     a single `.specify/feature.json` pointer (written by `speckit.specify`, git-ignored by
     `specify init`) and, since v1.0.11, offers `SPECIFY_FEATURE_DIRECTORY` +
-    `SPECIFY_FEATURE_NO_PERSIST` for concurrent agents. In cloud sessions each session is a
-    fresh clone, so a git-ignored pointer doesn't survive between phases, and a committed one
-    makes parallel sessions on different features collide. The seed therefore resolves the
-    feature in every skill's preamble, in order: the feature named in the user's request
-    (`002`, `002-name`, or a path) → `SPECIFY_FEATURE_DIRECTORY` → a local `feature.json` →
+    `SPECIFY_FEATURE_NO_PERSIST` for concurrent agents. Several problems follow from it:
+    - A cloud session is a fresh clone, so a git-ignored pointer doesn't survive between
+      phases.
+    - A committed pointer makes parallel sessions on different features collide.
+    - In a checkout shared by local agents, one agent's pointer silently becomes every other
+      agent's feature.
+    The seed therefore never writes or reads it. Every skill's preamble resolves the feature
+    in this order: the feature named in the user's request (`002`, `002-name`, or a path) →
+    `SPECIFY_FEATURE_DIRECTORY` → the feature this conversation already created or resolved →
     the only directory in `specs/features/` → stop and ask. Every script call is pinned with
-    `SPECIFY_FEATURE_DIRECTORY=<dir> SPECIFY_FEATURE_NO_PERSIST=1`. `speckit-specify` still
-    writes a local `feature.json` for the rest of its own session, and pulls the current
-    branch before numbering to reduce duplicate numbers across sessions.
+    `SPECIFY_FEATURE_DIRECTORY=<dir> SPECIFY_FEATURE_NO_PERSIST=1`, so upstream's scripts
+    neither read nor write the pointer either. `speckit-specify` fetches every remote branch
+    and numbers above the highest `NNN-` it finds on any local or remote branch, then re-checks the number
+    before each commit and push, renaming its own not-yet-pushed directory if the number has
+    been taken. `preflight.sh` flags any number still used twice.
+
+12. **The Sync Impact Report never stays in the committed constitution.** Upstream v1.2.2
+    calls the report "temporary scratch material… expected to be removed before the amended
+    constitution file is committed" but says neither who removes it nor where durable items
+    (deferred setup, `TODO`s) go. `speckit-constitution` makes both explicit:
+    - Durable items move into the constitution body (the sample's *Deferred Setup* section,
+      inline `TODO(<FIELD>)` markers).
+    - The report comment is then deleted and its text becomes the commit message body.
+    - A report left over from an earlier amendment is migrated and removed the same way.
+    `constitution-sample.md` no longer ships a report, and its Governance section says the
+    same.
 
 ## Upstream baseline (for upgrades)
 
@@ -164,8 +183,14 @@ catalogs, the workflow engine, the MCP server). What reached the seed:
 - Not adopted: upstream's `resolve-template.sh` (constitution template via presets — the
   seed's `constitution-sample.md` flow is kept), the deprecated `taskstoissues`, and the
   optional `bug` / `assess` extensions.
-- Seed-side change made at the same time: deviation 11 (feature named per request,
-  `feature.json` git-ignored).
+- Seed-side changes made at the same time: deviation 11 (feature named per request, no
+  `feature.json` pointer, numbering across all remote branches, duplicate-number warning) and
+  deviation 12 (Sync Impact Report kept out of the committed constitution; the sample's
+  deferred-setup list moved into its body and the `feature.json` governance rule replaced).
+- **Projects upgrading from v0.15.1:** a constitution adopted from the older sample still says
+  the feature resolves from `.specify/feature.json`, and may carry a committed Sync Impact
+  Report. The upgrade prompt in the seed's `INSTALL.md` checks for both and proposes an
+  amendment; see its rollout steps when features are in flight.
 
 ## Re-running / updating
 

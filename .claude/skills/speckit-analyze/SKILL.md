@@ -13,7 +13,7 @@ You are in a **Claude Code cloud session**: all work stays on the **current git 
 
 1. The user's request names a feature (`002`, `002-report-export`, or `specs/features/002-report-export`) → the single matching `NNN-*` directory under `specs/features/`. If nothing or more than one matches, **STOP** and list the feature directories.
 2. `SPECIFY_FEATURE_DIRECTORY` is already set in the environment → use it.
-3. A local `.specify/feature.json` exists (untracked; written by speckit-specify earlier in this same session) → use its `feature_directory`.
+3. This conversation already created or resolved a feature (e.g. `speckit-specify` ran earlier in this same session) → use that one. Never pick a feature from `.specify/feature.json`: the seed no longer writes it, so a copy on disk is a stale leftover or belongs to another agent sharing this checkout.
 4. `specs/features/` holds exactly one `NNN-*` directory → use it.
 5. Otherwise **STOP**: run `bash .specify/scripts/bash/preflight.sh` (it lists every feature and its next phase) and ask the user which feature to work on.
 
