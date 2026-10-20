@@ -62,9 +62,10 @@ of the seed:
    > This repo was created from a spec-kit seed template. Finalize the install: merge the two
    > sections of `CLAUDE.snippet.md` into `CLAUDE.md` (create `CLAUDE.md` if absent) and fill
    > every `<FILL IN>` placeholder — build/test/lint/run commands from this repo's real
-   > tooling, and the branch model from its existing branches (say so if there are no feature
-   > branches); then delete `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not
-   > project files).
+   > tooling, the branch model from its existing branches (say so if there are no feature
+   > branches), and the *Shared artifacts* table from the documents in this repo that more
+   > than one feature will change (propose a rule for each and ask me); then delete
+   > `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not project files).
    > Run `bash .specify/scripts/bash/preflight.sh` to verify, then commit and push to the
    > current branch.
 
@@ -83,7 +84,8 @@ any other project):
    > **`<owner>/spec-kit-seed`**, with its files at the repo root. Add that seed repo to the
    > session so you can read it, copy `.claude/` and `.specify/` in verbatim, merge the
    > `CLAUDE.snippet.md` sections into `CLAUDE.md` and fill the `<FILL IN>` placeholders from
-   > this repo's real tooling and existing branches, run
+   > this repo's real tooling, existing branches and shared documents (propose a *Shared
+   > artifacts* rule for each and ask me), run
    > `bash .specify/scripts/bash/preflight.sh` to verify, then commit and push to the current
    > branch. Do not copy `INSTALL.md` or `CLAUDE.snippet.md` into this repo.
 
@@ -101,8 +103,10 @@ These run **inside the web session**, executed by Claude — not steps you type:
    `## Spec-Driven Development (SDD)`): create or merge, don't duplicate an existing build/test
    section, fill every `<FILL IN>` from the repo's real commands and its existing branches
    (the `Branch model` line — e.g. "development / hotfix / main, no feature branches; SDD work
-   runs on development"), and delete the snippet's leading HTML comment and any
-   multi-deployable note that doesn't apply.
+   runs on development"), list the repo's existing shared documents (e.g. `DECISIONS.md`,
+   `docs/*`, `CHANGELOG.md`) in the *Shared artifacts* table with a proposed rule each, and
+   delete the snippet's leading HTML comment and any multi-deployable note that doesn't
+   apply.
 3. Delete `INSTALL.md` and `CLAUDE.snippet.md`.
 4. Verify with `bash .specify/scripts/bash/preflight.sh` — expect `Constitution:
    still-template`, `Active feature: (none resolved)`, `Next valid phase: speckit-constitution
@@ -145,7 +149,11 @@ gates in `speckit-plan` / `speckit-tasks` / `speckit-implement` stay locked unti
   gates stay locked until those tokens are replaced. Edit the sample in the seed to change the
   house rules for every future project.
 - **Parallel features.** There is no feature pointer at all, so separate sessions can work
-  on different features at once (see "Several features in parallel" in `USAGE.md`).
+  on different features at once (see "Several features in parallel" in `USAGE.md`). Files
+  outside a feature's directory that several features change are listed in `CLAUDE.md`'s
+  *Shared artifacts* table with the one rule for changing each. `speckit-plan`,
+  `speckit-tasks` and `speckit-implement` follow that table and flag any shared file it
+  doesn't list.
 - **No feature branches required.** Features are identified by their directory (named in
   each phase prompt), never by branch, so the seed drops into repos that only have long-lived branches (e.g.
   `development` / `hotfix` / `main`) without any change. Fill the `Branch model` line in the
@@ -196,7 +204,19 @@ integration branch (the branch features merge into, e.g. `development`) and past
 >    and today's Last Amended date. Show me the diff and wait for my approval before writing
 >    it. Report anything else in the constitution that contradicts the upgraded skills, but
 >    don't change it.
-> 5. Run `bash .specify/scripts/bash/preflight.sh`. Confirm it shows `Constitution: filled` and
+> 5. Inventory the **shared artifacts**: files outside `specs/features/` that more than one
+>    feature changes. Candidates are decision logs such as `DECISIONS.md`, `CHANGELOG.md`,
+>    `README.md`, the `docs/` set, and any file the constitution or `CLAUDE.md` says a change
+>    must update. Check `git log --name-only` to see which files several features' commits
+>    have touched. For each one, tell me what the constitution and `CLAUDE.md` currently say
+>    about how it is changed, and how its existing entries are structured (dated log,
+>    numbered entries, rows tagged by feature, free prose). Then propose one rule per file
+>    from the options in the comment under the *Shared artifacts* table in the seed's
+>    `CLAUDE.snippet.md`, and fill that table in `CLAUDE.md`. If the constitution lacks the
+>    seed sample's *Shared artifacts* workflow line, add it to the step 4 amendment. If a
+>    proposed rule contradicts the constitution (e.g. serializing a document every change
+>    must update), say so. Wait for my approval before writing the table.
+> 6. Run `bash .specify/scripts/bash/preflight.sh`. Confirm it shows `Constitution: filled` and
 >    lists every feature with its next phase, and report any duplicate-number warning to me.
 >    Then commit and push to the current branch.
 
@@ -221,7 +241,9 @@ So:
 4. **Duplicate numbers.** If preflight warns that two directories share a number, rename the
    one merged second to the next free number before any session works on it.
 5. **Restart** every agent in a fresh session, naming the feature in every prompt
-   (*"speckit-implement for 004"*). For local agents, see "Several features in parallel" in
+   (*"speckit-implement for 004"*). The agents read the *Shared artifacts* rules from
+   `CLAUDE.md`. In-flight branches get them through the step 3 merge, so do that merge
+   before restarting an agent on a branch. For local agents, see "Several features in parallel" in
    `USAGE.md`: one `git worktree` per agent, never one shared checkout.
 6. **Expect churn on in-flight features**, not conflicts:
    - Features whose implementation is **finished** (all tasks `[x]`): run `speckit-converge`
@@ -235,6 +257,10 @@ So:
      the old version (nothing forbade it then). For unattended agents, either get the
      checklists reviewed first or say in the implement prompt to proceed regardless.
    - `speckit-clarify` defers fewer questions, so re-running it on a draft spec may ask more.
+   - In-flight branches may already have edited shared artifacts in ways the new rules don't
+     allow (e.g. rewriting another feature's entry). Resolve those when merging, following
+     each file's rule. Watch agent reports for "Unlisted shared artifacts" and add a row to
+     the table for each one.
 
 ---
 

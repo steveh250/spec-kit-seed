@@ -310,9 +310,17 @@ same branch or on separate branches:
 - **One session per feature.** Two sessions on the *same* feature at once will both edit its
   `spec.md` / `tasks.md` and conflict — finish or merge one first. `[P]` markers in
   `tasks.md` mean tasks can be done in either order, not that two agents can share a feature.
-- **Serialize the shared files.** `.specify/memory/constitution.md` and `CLAUDE.md` are
-  global. Make constitution amendments, and any `CLAUDE.md` edit (e.g. `speckit-tasks`
-  documenting `[deploy]` tags), from one session at a time on the integration branch.
+- **Shared artifacts have one rule each.** Every file outside `specs/features/` that more
+  than one feature changes is listed in the *Shared artifacts* table in `CLAUDE.md` with
+  the one way it is changed. That covers the constitution, `CLAUDE.md`, decision logs such
+  as `DECISIONS.md`, the `docs/` set and changelogs. Constitution amendments and `CLAUDE.md`
+  edits (e.g. `speckit-tasks` documenting `[deploy]` tags) happen one session at a time on
+  the integration branch. Documents every change must update suit append-only entries
+  tagged with the feature id, so merges are always "keep both". A decision log can stay
+  feature-local (`research.md`) with only cross-cutting decisions copied in, or become one
+  file per decision. `speckit-plan`, `speckit-tasks` and `speckit-implement` follow the
+  table. An agent that needs an unlisted shared file appends only, tags the entry, and
+  lists the file in its report. Add a row for it before the next parallel run.
 - **Cloud sessions** are separate clones, so nothing on disk is shared. Sessions on the same
   branch just need to pull when a push is rejected.
 - **Local agents (desktop or CLI) need one `git worktree` each — never one shared checkout.**

@@ -46,9 +46,10 @@ repository**. (Step 0 in [`INSTALL.md`](INSTALL.md) covers creating the seed rep
    > This repo was created from a spec-kit seed template. Finalize the install: merge the two
    > sections of `CLAUDE.snippet.md` into `CLAUDE.md` (create `CLAUDE.md` if absent) and fill
    > every `<FILL IN>` placeholder — build/test/lint/run commands from this repo's real
-   > tooling, and the branch model from its existing branches (say so if there are no feature
-   > branches); then delete `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not
-   > project files).
+   > tooling, the branch model from its existing branches (say so if there are no feature
+   > branches), and the *Shared artifacts* table from the documents in this repo that more
+   > than one feature will change (propose a rule for each and ask me); then delete
+   > `INSTALL.md` and `CLAUDE.snippet.md` (they are seed tooling, not project files).
    > Run `bash .specify/scripts/bash/preflight.sh` to verify, then commit and push to the
    > current branch.
 
