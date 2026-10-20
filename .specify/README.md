@@ -139,6 +139,17 @@ sources are preserved under `.specify/upstream/<tag>/` for diffing on upgrade.
     `constitution-sample.md` no longer ships a report, and its Governance section says the
     same.
 
+13. **Shared artifacts are declared, not guessed.** Upstream says nothing about files that
+    several features change (decision logs, `docs/`, changelogs, `CLAUDE.md`). Under
+    parallel work they are where features conflict or overwrite each other. The CLAUDE.md
+    snippet adds a *Shared artifacts* table giving each such file one rule: append-only
+    keyed by feature id, feature-local first, one file per entry, or serialized.
+    `constitution-sample.md` requires the table. `speckit-plan`, `speckit-tasks` and
+    `speckit-implement` follow it. They append only, tagged with the feature id, to a
+    shared file it doesn't list, and flag that file in their report. The upgrade prompt in
+    the seed's `INSTALL.md` takes an inventory of an existing project's shared files and
+    proposes rules for approval.
+
 ## Upstream baseline (for upgrades)
 
 The unmodified upstream sources this install was adapted from are stored under
@@ -187,6 +198,7 @@ catalogs, the workflow engine, the MCP server). What reached the seed:
   `feature.json` pointer, numbering across all remote branches, duplicate-number warning) and
   deviation 12 (Sync Impact Report kept out of the committed constitution; the sample's
   deferred-setup list moved into its body and the `feature.json` governance rule replaced).
+  Deviation 13 (shared-artifacts table) followed in a later seed change.
 - **Projects upgrading from v0.15.1:** a constitution adopted from the older sample still says
   the feature resolves from `.specify/feature.json`, and may carry a committed Sync Impact
   Report. The upgrade prompt in the seed's `INSTALL.md` checks for both and proposes an

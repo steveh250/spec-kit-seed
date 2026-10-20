@@ -335,6 +335,15 @@ numbers; do not replace them with aspirational language.
   parallel marker, a `[US#]` story label, an exact file path, and, in
   multi-deployable repos, a deployable tag so a session installs one toolchain
   and works a contiguous block.
+- **Shared artifacts**: a file outside `specs/features/` that more than one
+  feature changes is shared. Examples are this constitution, `CLAUDE.md`, the
+  Principle II documents, decision logs and changelogs. Each one MUST be listed
+  in `CLAUDE.md`'s *Shared artifacts* table with the rule for changing it, so
+  features developed in parallel neither conflict on it nor overwrite each
+  other's entries. Sessions follow the listed rule. A shared file with no rule
+  is flagged and given one, never edited by a convention a session makes up.
+  The rule for a Principle II document MUST still let every feature's commits
+  keep it current, e.g. append-only rows keyed by feature id.
 - **Definition of done** for a change: spec updated, tests added and green,
   lint / type-check green, the documentation set in Principle II updated,
   `tasks.md` checkboxes ticked, and the commit pushed.

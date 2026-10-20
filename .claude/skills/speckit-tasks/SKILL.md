@@ -26,6 +26,8 @@ Call the result `FEATURE` (repo-relative, e.g. `specs/features/002-report-export
 
 Do not proceed past this Preflight until the gate above is satisfied.
 
+**Shared artifacts.** This skill writes freely only inside `FEATURE` (and, for implementation, source code — code conflicts between features are ordinary merges). Any other document or record that several features change — the constitution, `CLAUDE.md`, decision logs such as `DECISIONS.md`, the `docs/` set, changelogs — is a shared artifact. Before changing one, find it in the **Shared artifacts** table in `CLAUDE.md` and follow its rule. If it isn't listed, don't invent a convention: make the smallest append-only change, tag it with the feature id (e.g. `[004]`), never edit or reorder another feature's entries, and list the file under "Unlisted shared artifacts" in your report so a rule gets added. A task that edits a shared artifact states the rule in its description (e.g. "append a row tagged `[004]` to `docs/FR.md`").
+
 ---
 
 ## User Input
